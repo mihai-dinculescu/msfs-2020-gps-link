@@ -1,0 +1,36 @@
+[package]
+name = "MSFS-2020-GPS-Link"
+version = "0.1.0"
+authors = [ "Mihai Dinculescu <mihai.dinculescu@outlook.com>" ]
+edition = "2018"
+description = "MSFS 2020 GPS Link"
+license = "MIT"
+default-run = "msfs-2020-gps-link"
+build = "src/build.rs"
+
+[[bin]]
+name = "msfs-2020-gps-link"
+path = "src/main.rs"
+
+[dependencies]
+tauri = { version = "0.10", features = [ "all-api" ] }
+actix = "0.10.0"
+actix-rt = "1.1.1"
+serde_json = "1.0"
+serde = { version = "1.0", features = [ "derive" ] }
+tokio = { version = "1.0.1", features = [ "rt-multi-thread", "sync" ] }
+chrono = "0.4.19"
+tracing = "0.1.22"
+tracing-subscriber = "0.2.15"
+tracing-log = "0.1.1"
+tracing-opentelemetry = "0.9.0"
+opentelemetry = { version = "0.10.0" }
+opentelemetry-jaeger = { version = "0.9.0" }
+simconnect-client = { path = "../../simconnect-client" }
+
+[target."cfg(windows)".build-dependencies]
+winres = "0.1"
+
+[features]
+embedded-server = [ "tauri/embedded-server" ]
+no-server = [ "tauri/no-server" ]

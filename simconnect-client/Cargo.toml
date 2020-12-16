@@ -1,0 +1,12 @@
+[package]
+name = "simconnect-client"
+version = "0.1.0"
+authors = ["Mihai Dinculescu <mihai.dinculescu@outlook.com>"]
+edition = "2018"
+
+[build-dependencies]
+bindgen = "0.56.0"
+
+[dependencies]
+num_enum = "0.5.1"
+tracing = "0.1.22"

@@ -1,0 +1,6 @@
+[workspace]
+
+members = [
+    "simconnect-client",
+    "msfs-2020-gps-link/src-tauri"
+]

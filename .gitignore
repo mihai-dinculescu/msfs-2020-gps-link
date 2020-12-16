@@ -1,0 +1,4 @@
+.vscode
+.cargo
+target
+node_modules

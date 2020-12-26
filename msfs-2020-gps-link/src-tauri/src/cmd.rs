@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use crate::system::messages::RefreshRate;
 
 #[derive(Debug, Deserialize)]
+#[serde(tag = "cmd", rename_all = "camelCase")]
 pub struct StartOptions {
     pub refresh_rate: RefreshRate,
     pub broadcast_netmask: String,

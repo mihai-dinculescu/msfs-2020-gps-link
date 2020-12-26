@@ -2,7 +2,7 @@ use actix::{
     clock::delay_for, Actor, ActorContext, Addr, AsyncContext, Context, Handler, WrapFuture,
 };
 use chrono::Utc;
-use simconnect_client::{Notification, SimConnect};
+use simconnect_client::{Notification, PeriodEnum, SimConnect};
 use tracing::{info, instrument};
 
 use crate::system::{broadcaster_actor::BroadcasterActor, messages::GpsData};
@@ -41,36 +41,49 @@ impl Actor for SimconnectActor {
                 let mut last_update = Utc::now();
 
                 loop {
-                    let notification = sc.get_next_notification().unwrap();
+                    let notification = sc.get_next_dispatch().unwrap();
 
                     match notification {
                         Some(Notification::Open) => {
                             info!("Open");
 
-                            sc.add_data_definition(gps_data_define_id, "PLANE LATITUDE", "Degrees")
-                                .unwrap();
-                            sc.add_data_definition(
+                            sc.add_to_data_definition(
+                                gps_data_define_id,
+                                "PLANE LATITUDE",
+                                "Degrees",
+                            )
+                            .unwrap();
+                            sc.add_to_data_definition(
                                 gps_data_define_id,
                                 "PLANE LONGITUDE",
                                 "Degrees",
                             )
                             .unwrap();
-                            sc.add_data_definition(gps_data_define_id, "PLANE ALTITUDE", "Meters")
-                                .unwrap(); //define_id, units, data_type, datum_id
-                            sc.add_data_definition(
+                            sc.add_to_data_definition(
+                                gps_data_define_id,
+                                "PLANE ALTITUDE",
+                                "Meters",
+                            )
+                            .unwrap(); //define_id, units, data_type, datum_id
+                            sc.add_to_data_definition(
                                 gps_data_define_id,
                                 "PLANE HEADING DEGREES TRUE",
                                 "Degrees",
                             )
                             .unwrap();
-                            sc.add_data_definition(
+                            sc.add_to_data_definition(
                                 gps_data_define_id,
                                 "GPS GROUND SPEED",
                                 "Meters per second",
                             )
                             .unwrap();
 
-                            sc.request_data_on_sim_object(0, gps_data_define_id, 0)
+                            let period = match refresh_rate {
+                                RefreshRate::Fast => PeriodEnum::VisualFrame,
+                                RefreshRate::Slow => PeriodEnum::Second,
+                            };
+
+                            sc.request_data_on_sim_object(0, gps_data_define_id, 0, period)
                                 .unwrap();
                         }
                         Some(Notification::Quit) => {
@@ -95,7 +108,7 @@ impl Actor for SimconnectActor {
                     let delay = if refresh_rate == RefreshRate::Fast {
                         8
                     } else {
-                        500
+                        250
                     };
 
                     delay_for(std::time::Duration::from_millis(delay)).await;

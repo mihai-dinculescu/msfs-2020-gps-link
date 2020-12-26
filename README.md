@@ -32,7 +32,7 @@ yarn tauri dev
 
 Tauri doesn't currently handle Rust workspaces very well. The following workaround is needed in order to make it successfully build the release bundle
 
-.cargo/config
+msfs-2020-gps-link/.cargo/config
 
 ```toml
 [build]

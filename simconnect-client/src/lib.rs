@@ -55,7 +55,7 @@ impl SimConnect {
         })
     }
 
-    #[tracing::instrument]
+    #[tracing::instrument(name = "SimConnect::register_event")]
     pub fn register_event(&self, event: Event) -> Result<(), i32> {
         success!(unsafe {
             bindings::SimConnect_MapClientEventToSimEvent(
@@ -83,8 +83,8 @@ impl SimConnect {
         Ok(())
     }
 
-    #[tracing::instrument]
-    pub fn add_data_definition(
+    #[tracing::instrument(name = "SimConnect::add_to_data_definition")]
+    pub fn add_to_data_definition(
         &self,
         define_id: u32,
         datum_name: &str,
@@ -94,8 +94,8 @@ impl SimConnect {
             success!(bindings::SimConnect_AddToDataDefinition(
                 self.handle.as_ptr(),
                 define_id,
-                std::ffi::CString::new(datum_name).unwrap().as_ptr(),
-                std::ffi::CString::new(units_name).unwrap().as_ptr(),
+                as_c_string!(datum_name),
+                as_c_string!(units_name),
                 bindings::SIMCONNECT_DATATYPE_SIMCONNECT_DATATYPE_FLOAT64,
                 0.0,
                 u32::MAX,
@@ -105,20 +105,28 @@ impl SimConnect {
         Ok(())
     }
 
-    #[tracing::instrument]
+    #[tracing::instrument(name = "SimConnect::request_data_on_sim_object")]
     pub fn request_data_on_sim_object(
         &self,
-        request_id: bindings::SIMCONNECT_DATA_REQUEST_ID,
-        define_id: bindings::SIMCONNECT_DATA_DEFINITION_ID,
-        object_id: bindings::SIMCONNECT_OBJECT_ID,
+        request_id: u32,
+        define_id: u32,
+        object_id: u32,
+        period: PeriodEnum,
     ) -> Result<(), i32> {
         unsafe {
+            let simconnect_period = match period {
+                PeriodEnum::VisualFrame => {
+                    bindings::SIMCONNECT_PERIOD_SIMCONNECT_PERIOD_VISUAL_FRAME
+                }
+                PeriodEnum::Second => bindings::SIMCONNECT_PERIOD_SIMCONNECT_PERIOD_SECOND,
+            };
+
             success!(bindings::SimConnect_RequestDataOnSimObject(
                 self.handle.as_ptr(),
                 request_id,
                 define_id,
                 object_id,
-                bindings::SIMCONNECT_PERIOD_SIMCONNECT_PERIOD_VISUAL_FRAME,
+                simconnect_period,
                 0,
                 0,
                 0,
@@ -129,7 +137,7 @@ impl SimConnect {
         Ok(())
     }
 
-    pub fn get_next_notification(&self) -> Result<Option<Notification>, i32> {
+    pub fn get_next_dispatch(&self) -> Result<Option<Notification>, i32> {
         let mut data_buf: *mut bindings::SIMCONNECT_RECV = std::ptr::null_mut();
         let mut size_buf: bindings::DWORD = 32;
         let size_buf_pointer: *mut bindings::DWORD = &mut size_buf;
@@ -185,6 +193,12 @@ pub enum Event {
     Brakes,
     BrakesLeft,
     AxisLeftBrakeSet,
+}
+
+#[derive(Debug)]
+pub enum PeriodEnum {
+    VisualFrame,
+    Second,
 }
 
 use std::os::raw::c_char;

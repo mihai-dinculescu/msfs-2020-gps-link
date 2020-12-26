@@ -4,6 +4,7 @@
   "private": true,
   "dependencies": {
     "@material-ui/core": "^4.11.2",
+    "@material-ui/lab": "^4.0.0-alpha.57",
     "@testing-library/jest-dom": "^5.11.4",
     "@testing-library/react": "^11.1.0",
     "@testing-library/user-event": "^12.1.10",
@@ -22,13 +23,28 @@
   },
   "scripts": {
     "start": "react-app-rewired start",
+    "lint": "eslint .",
     "build": "react-app-rewired build",
     "test": "react-app-rewired test"
   },
   "eslintConfig": {
     "extends": [
       "react-app",
-      "react-app/jest"
+      "react-app/jest",
+      "plugin:@typescript-eslint/recommended"
+    ],
+    "parser": "@typescript-eslint/parser",
+    "parserOptions": {
+      "ecmaFeatures": {
+        "jsx": true
+      },
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "project": "./tsconfig.json"
+    },
+    "ignorePatterns": [
+      "build/*",
+      "config-overrides.js"
     ]
   },
   "browserslist": {

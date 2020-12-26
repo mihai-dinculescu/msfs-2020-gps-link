@@ -10,11 +10,14 @@ import FormControl from '@material-ui/core/FormControl';
 import FormLabel from '@material-ui/core/FormLabel';
 import TextField from '@material-ui/core/TextField';
 import Input from '@material-ui/core/Input';
+import Alert from '@material-ui/lab/Alert';
 import MaskedInput from 'react-text-mask';
 
 import { v4 as uuidv4 } from 'uuid';
 import { promisified } from 'tauri/api/tauri';
 import React from 'react';
+
+const packageVersion = process.env.REACT_APP_VERSION;
 
 const useStyles = makeStyles((theme) => ({
     root: {
@@ -34,6 +37,7 @@ const TextMaskCustom = (props: TextMaskCustomProps) => {
     return (
         <MaskedInput
             {...other}
+            /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
             ref={(ref: any) => {
                 inputRef(ref ? ref.inputElement : null);
             }}
@@ -44,15 +48,16 @@ const TextMaskCustom = (props: TextMaskCustomProps) => {
     );
 };
 
-export const App = () => {
+export const App: React.FC = () => {
     const classes = useStyles();
     const [refreshRate, setRefreshRate] = React.useState('Fast');
     const [broadcastPort, setBroadcastPort] = React.useState(49002);
     const [broadcastNetmask, setBroadcastNetmask] = React.useState('255.255.255.255');
     const [isConnecting, setIsConnecting] = React.useState(false);
     const [isConnected, setIsConnected] = React.useState(false);
+    const [latestVersion, setLatestVersion] = React.useState<string | undefined>();
 
-    const connect = () => {
+    const connect = React.useCallback(() => {
         promisified({
             cmd: 'start',
             requestId: uuidv4(),
@@ -61,26 +66,19 @@ export const App = () => {
                 broadcastPort,
                 refreshRate,
             },
-        })
-            .then((response: any) => {
-                // do something with the Ok() response
-                // const { message } = response;
-            })
-            .catch((error) => {
-                // do something with the Err() response string
-                console.error('Start', error);
-            });
-    };
+        }).catch((error) => {
+            console.error('Start', error);
+        });
+    }, [broadcastNetmask, broadcastPort, refreshRate]);
 
-    const getStatus = () => {
+    const getStatus = React.useCallback(() => {
         if (isConnecting || isConnected) {
             promisified({
                 cmd: 'status',
                 requestId: uuidv4(),
             })
-                .then((response: any) => {
-                    // do something with the Ok() response
-                    const { message } = response;
+                .then((response) => {
+                    const { message } = response as { message: string };
 
                     if (message === 'OK') {
                         setIsConnected(true);
@@ -89,33 +87,44 @@ export const App = () => {
                     }
                 })
                 .catch((error) => {
-                    // do something with the Err() response string
                     console.error('Status', error);
                 });
         }
-    };
+    }, [isConnecting, isConnected]);
+
+    React.useEffect(() => {
+        const fn = async () => {
+            const url = 'https://raw.githubusercontent.com/mihai-dinculescu/msfs-2020-gps-link/main/version.txt';
+
+            const req = await fetch(url);
+            const value = await req.text();
+            setLatestVersion(value);
+        };
+
+        fn();
+    }, []);
 
     React.useEffect(() => {
         if (isConnecting && !isConnected) {
             const timer = setInterval(connect, 3 * 1000);
             return () => clearInterval(timer);
         }
-    });
+    }, [isConnecting, isConnected, connect]);
 
     React.useEffect(() => {
         const timer = setInterval(getStatus, 3 * 1000);
         return () => clearInterval(timer);
-    });
+    }, [getStatus]);
 
-    const refreshRateOnChange = (event: any) => {
+    const refreshRateOnChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setRefreshRate(event.target.value);
     };
 
-    const broadcastPortOnChange = (event: any) => {
+    const broadcastPortOnChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setBroadcastPort(parseInt(event.target.value, 10));
     };
 
-    const broadcastNetmaskOnChange = (event: any) => {
+    const broadcastNetmaskOnChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setBroadcastNetmask(event.target.value);
     };
 
@@ -133,13 +142,11 @@ export const App = () => {
             cmd: 'stop',
             requestId: uuidv4(),
         })
-            .then((response: any) => {
-                // do something with the Ok() response
-                const { message } = response;
+            .then((response) => {
+                const { message } = response as { message: string };
                 console.log(message);
             })
             .catch((error) => {
-                // do something with the Err() response string
                 console.error(error);
             });
     };
@@ -150,15 +157,23 @@ export const App = () => {
 
     if (isConnected) {
         status = (
-            <Typography variant="h5" component="h2" gutterBottom color="primary">
-                Connected
-            </Typography>
+            <>
+                <br />
+                <br />
+                <Typography variant="h5" component="h2" gutterBottom color="primary">
+                    Connected
+                </Typography>
+            </>
         );
     } else if (isConnecting) {
         status = (
-            <Typography variant="h5" component="h2" gutterBottom color="textSecondary">
-                Connecting...
-            </Typography>
+            <>
+                <br />
+                <br />
+                <Typography variant="h5" component="h2" gutterBottom color="textSecondary">
+                    Connecting...
+                </Typography>
+            </>
         );
     }
 
@@ -170,18 +185,8 @@ export const App = () => {
                         MSFS 2020 GPS Link
                     </Typography>
                     <Typography>Transmit GPS data from Microsoft Flight Simulator 2020 to navigation apps.</Typography>
-                    <Typography>
-                        Tested with{' '}
-                        <a target="_bank" href="https://www.skydemon.aero/">
-                            SkyDemon
-                        </a>{' '}
-                        and{' '}
-                        <a target="_bank" href="https://buy.garmin.com/en-US/US/p/115856">
-                            Garmin Pilot
-                        </a>
-                        .
-                    </Typography>
-                    <br />
+                </Box>
+                <Box my={4} className={classes.root}>
                     <FormControl component="fieldset">
                         <FormLabel component="legend">Refresh rate</FormLabel>
                         <RadioGroup
@@ -208,6 +213,7 @@ export const App = () => {
                             disabled={isDisabled}
                             name="broadcastNetmask"
                             id="broadcastNetmask"
+                            /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
                             inputComponent={TextMaskCustom as any}
                             value={broadcastNetmask}
                             onChange={broadcastNetmaskOnChange}
@@ -227,17 +233,28 @@ export const App = () => {
                             onChange={broadcastPortOnChange}
                         />
                     </FormControl>
-                    <br />
-                    <br />
+                </Box>
+                <Box my={4} className={classes.root}>
                     <Button onClick={onStart} variant="contained" color="primary" disabled={isDisabled}>
                         Connect
                     </Button>
                     <Button onClick={onStop} variant="contained" color="secondary" disabled={!isDisabled}>
                         Disconnect
                     </Button>
-                    <br />
-                    <br />
                     {status}
+                </Box>
+                <Box my={4} className={classes.root}>
+                    {latestVersion ? (
+                        packageVersion?.trim() === latestVersion?.trim() ? (
+                            <Alert severity="info">Version {packageVersion}</Alert>
+                        ) : (
+                            <Alert severity="warning">
+                                There is a new version available. Download it from:
+                                <br />
+                                https://github.com/mihai-dinculescu/msfs-2020-gps-link/releases
+                            </Alert>
+                        )
+                    ) : null}
                 </Box>
             </Container>
         </>

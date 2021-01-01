@@ -1,5 +1,8 @@
 # MSFS 2020 GPS Link
 
+[![GitHub release][latest_release_badge]][releases_url]
+[![Github all releases][downloads_badge]][releases_url]
+
 Transmit GPS data from Microsoft Flight Simulator 2020 to navigation apps.\
 Tested with [SkyDemon][sky_demon_url] and [Garmin Pilot][garmin_pilot_url].
 
@@ -60,6 +63,8 @@ RUST_LOG=info yarn tauri dev
 
 Browse the Jaeger traces at http://localhost:16686.
 
+[latest_release_badge]: https://img.shields.io/github/release/mihai-dinculescu/msfs-2020-gps-link.svg
+[downloads_badge]: https://img.shields.io/github/downloads/mihai-dinculescu/msfs-2020-gps-link/total.svg
 [sky_demon_url]: https://www.skydemon.aero
 [garmin_pilot_url]: https://buy.garmin.com/en-US/US/p/115856
 [latest_release]: https://github.com/mihai-dinculescu/msfs-2020-gps-link/releases/download/v0.1.0/msfs-2020-gps-link-v0.1.0.zip

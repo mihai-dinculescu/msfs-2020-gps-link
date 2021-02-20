@@ -3,7 +3,7 @@ use std::net::UdpSocket;
 use actix::{Actor, ActorContext, Context, Handler};
 use tracing::{error, instrument};
 
-use crate::system::messages::GpsData;
+use crate::system::messages::GpsDataMessage;
 
 use super::messages::StopMessage;
 
@@ -36,12 +36,13 @@ impl Actor for BroadcasterActor {
     fn stopped(&mut self, _ctx: &mut Self::Context) {}
 }
 
-impl Handler<GpsData> for BroadcasterActor {
+impl Handler<GpsDataMessage> for BroadcasterActor {
     type Result = ();
 
     #[instrument(name = "BroadcasterActor::Handler<GpsData>", skip(self, _ctx))]
-    fn handle(&mut self, sim_data: GpsData, _ctx: &mut Context<Self>) -> Self::Result {
+    fn handle(&mut self, sim_data: GpsDataMessage, _ctx: &mut Context<Self>) -> Self::Result {
         if let Some(socket) = &self.socket {
+            // use chrono::Utc;
             // println!(
             //     "sending message {:?} {:?}",
             //     Utc::now().timestamp_millis(),

@@ -25,6 +25,7 @@ tracing-subscriber = "0.2.15"
 tracing-log = "0.1.1"
 tracing-opentelemetry = "0.10.0"
 opentelemetry-jaeger = { version = "0.10.0" }
+
 simconnect-client = { path = "../../simconnect-client" }
 
 [target."cfg(windows)".build-dependencies]

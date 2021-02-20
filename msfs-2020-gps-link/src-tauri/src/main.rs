@@ -34,6 +34,7 @@ fn setup_app() {
             handle: None,
             rx: Some(rx),
             broadcaster: None,
+            landing_detection: None,
             simconnect: None,
         };
 

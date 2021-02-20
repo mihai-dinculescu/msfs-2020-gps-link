@@ -1,7 +1,9 @@
+use helpers::fixed_c_str_to_string;
 use std::ffi::c_void;
 use std::{convert::TryFrom, fmt::Debug};
 
 mod bindings;
+mod helpers;
 
 macro_rules! success {
     ($hr:expr) => {{
@@ -86,14 +88,14 @@ impl SimConnect {
     #[tracing::instrument(name = "SimConnect::add_to_data_definition")]
     pub fn add_to_data_definition(
         &self,
-        define_id: u32,
+        request_id: u32,
         datum_name: &str,
         units_name: &str,
     ) -> Result<(), i32> {
         unsafe {
             success!(bindings::SimConnect_AddToDataDefinition(
                 self.handle.as_ptr(),
-                define_id,
+                request_id,
                 as_c_string!(datum_name),
                 as_c_string!(units_name),
                 bindings::SIMCONNECT_DATATYPE_SIMCONNECT_DATATYPE_FLOAT64,
@@ -109,28 +111,59 @@ impl SimConnect {
     pub fn request_data_on_sim_object(
         &self,
         request_id: u32,
-        define_id: u32,
-        object_id: u32,
         period: PeriodEnum,
+        condition: ConditionEnum,
     ) -> Result<(), i32> {
         unsafe {
-            let simconnect_period = match period {
-                PeriodEnum::VisualFrame => {
-                    bindings::SIMCONNECT_PERIOD_SIMCONNECT_PERIOD_VISUAL_FRAME
-                }
-                PeriodEnum::Second => bindings::SIMCONNECT_PERIOD_SIMCONNECT_PERIOD_SECOND,
+            let (simconnect_period, simconnect_interval) = match period {
+                PeriodEnum::VisualFrame { interval } => (
+                    bindings::SIMCONNECT_PERIOD_SIMCONNECT_PERIOD_VISUAL_FRAME,
+                    interval,
+                ),
+                PeriodEnum::Second => (bindings::SIMCONNECT_PERIOD_SIMCONNECT_PERIOD_SECOND, 0),
+            };
+
+            let simconnect_flags: u32 = match condition {
+                ConditionEnum::None => 0,
+                ConditionEnum::Changed => bindings::SIMCONNECT_DATA_REQUEST_FLAG_CHANGED,
             };
 
             success!(bindings::SimConnect_RequestDataOnSimObject(
                 self.handle.as_ptr(),
                 request_id,
-                define_id,
-                object_id,
+                request_id,
+                request_id,
                 simconnect_period,
+                simconnect_flags,
                 0,
+                simconnect_interval,
                 0,
-                0,
-                0,
+            ));
+        }
+
+        Ok(())
+    }
+
+    #[tracing::instrument(name = "SimConnect::subscribe_to_airport_list")]
+    pub fn subscribe_to_airport_list(&self, request_id: u32) -> Result<(), i32> {
+        unsafe {
+            success!(bindings::SimConnect_SubscribeToFacilities(
+                self.handle.as_ptr(),
+                bindings::SIMCONNECT_FACILITY_LIST_TYPE_SIMCONNECT_FACILITY_LIST_TYPE_AIRPORT,
+                request_id,
+            ));
+        }
+
+        Ok(())
+    }
+
+    #[tracing::instrument(name = "SimConnect::request_airport_list")]
+    pub fn request_airport_list(&self, request_id: u32) -> Result<(), i32> {
+        unsafe {
+            success!(bindings::SimConnect_RequestFacilitiesList(
+                self.handle.as_ptr(),
+                bindings::SIMCONNECT_FACILITY_LIST_TYPE_SIMCONNECT_FACILITY_LIST_TYPE_AIRPORT,
+                request_id,
             ));
         }
 
@@ -161,15 +194,41 @@ impl SimConnect {
                 let event = Event::try_from(event.uEventID).expect("Unrecognized event");
                 Some(Notification::Event(event))
             }
-            bindings::SIMCONNECT_RECV_ID_SIMCONNECT_RECV_ID_SIMOBJECT_DATA => unsafe {
-                let event: &bindings::SIMCONNECT_RECV_SIMOBJECT_DATA = std::mem::transmute_copy(
-                    &(data_buf as *const bindings::SIMCONNECT_RECV_SIMOBJECT_DATA),
-                );
+            bindings::SIMCONNECT_RECV_ID_SIMCONNECT_RECV_ID_SIMOBJECT_DATA => {
+                let event: &bindings::SIMCONNECT_RECV_SIMOBJECT_DATA = unsafe {
+                    std::mem::transmute_copy(
+                        &(data_buf as *const bindings::SIMCONNECT_RECV_SIMOBJECT_DATA),
+                    )
+                };
 
-                let data: &bindings::DWORD = &event.dwData;
+                let data: &bindings::DWORD = unsafe { &event.dwData };
 
                 Some(Notification::Data(event.dwDefineID, data))
-            },
+            }
+            bindings::SIMCONNECT_RECV_ID_SIMCONNECT_RECV_ID_AIRPORT_LIST => {
+                let event: &bindings::SIMCONNECT_RECV_AIRPORT_LIST = unsafe {
+                    std::mem::transmute_copy(
+                        &(data_buf as *const bindings::SIMCONNECT_RECV_AIRPORT_LIST),
+                    )
+                };
+
+                let data = event
+                    .rgData
+                    .iter()
+                    .map(|data| AirportData {
+                        icao: fixed_c_str_to_string(&data.Icao),
+                        lat: data.Latitude,
+                        lon: data.Longitude,
+                        alt: data.Altitude,
+                    })
+                    .collect::<Vec<_>>();
+
+                Some(Notification::AirportList(data))
+            }
+            bindings::SIMCONNECT_RECV_ID_SIMCONNECT_RECV_ID_EXCEPTION => {
+                let event = unsafe { *(data_buf as *const bindings::SIMCONNECT_RECV_EXCEPTION) };
+                Some(Notification::Exception(event.dwException))
+            }
             bindings::SIMCONNECT_RECV_ID_SIMCONNECT_RECV_ID_NULL => None,
             _ => panic!("Got unrecognized notification: {}", unsafe {
                 (*data_buf).dwID as i32
@@ -184,7 +243,17 @@ pub enum Notification<'a> {
     Open,
     Event(Event),
     Data(u32, &'a u32),
+    AirportList(Vec<AirportData>),
     Quit,
+    Exception(u32),
+}
+
+#[derive(Debug, Clone)]
+pub struct AirportData {
+    icao: String,
+    lat: f64,
+    lon: f64,
+    alt: f64,
 }
 
 #[derive(Debug, Copy, Clone, num_enum::TryFromPrimitive)]
@@ -195,10 +264,16 @@ pub enum Event {
     AxisLeftBrakeSet,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum PeriodEnum {
-    VisualFrame,
+    VisualFrame { interval: u32 },
     Second,
+}
+
+#[derive(Debug, Clone)]
+pub enum ConditionEnum {
+    None,
+    Changed,
 }
 
 use std::os::raw::c_char;

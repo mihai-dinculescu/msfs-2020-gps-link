@@ -4,6 +4,7 @@ use tracing::{field, info, instrument, Span};
 
 use super::{
     broadcaster_actor::BroadcasterActor,
+    landing_detection_actor::LandingDetectionActor,
     messages::{CoordinatorMessage, StopMessage},
     simconnect_actor::SimconnectActor,
 };
@@ -13,6 +14,7 @@ pub struct CoordinatorActor {
     pub handle: Option<SpawnHandle>,
     pub rx: Option<Receiver<CoordinatorMessage>>,
     pub broadcaster: Option<Addr<BroadcasterActor>>,
+    pub landing_detection: Option<Addr<LandingDetectionActor>>,
     pub simconnect: Option<Addr<SimconnectActor>>,
 }
 
@@ -77,13 +79,19 @@ impl Handler<CoordinatorMessage> for CoordinatorActor {
                 }
                 .start();
 
+                let landing = LandingDetectionActor::default().start();
+
                 let simconnect = SimconnectActor {
                     refresh_rate,
+                    // disabled for now as this functionality is not fully implemented
+                    landing_detection_enabled: false,
                     broadcaster: broadcaster.clone(),
+                    landing_detection: landing.clone(),
                 }
                 .start();
 
                 self.broadcaster = Some(broadcaster);
+                self.landing_detection = Some(landing);
                 self.simconnect = Some(simconnect);
             }
             CoordinatorMessage::Stop { request_id } => {
@@ -98,6 +106,14 @@ impl Handler<CoordinatorMessage> for CoordinatorActor {
                 let mut response = true;
 
                 if let Some(addr) = &self.broadcaster {
+                    if !addr.connected() {
+                        response = false;
+                    }
+                } else {
+                    response = false;
+                }
+
+                if let Some(addr) = &self.landing_detection {
                     if !addr.connected() {
                         response = false;
                     }
@@ -128,6 +144,13 @@ impl CoordinatorActor {
                     .expect("Broadcaster queue is full");
             }
             self.broadcaster = None;
+        }
+
+        if let Some(addr) = &self.landing_detection {
+            if addr.connected() {
+                addr.try_send(StopMessage).expect("Landing queue is full");
+            }
+            self.simconnect = None;
         }
 
         if let Some(addr) = &self.simconnect {

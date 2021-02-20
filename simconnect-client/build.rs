@@ -40,12 +40,17 @@ fn main() {
         .whitelist_function("SimConnect_GetNextDispatch")
         .whitelist_function("SimConnect_AddToDataDefinition")
         .whitelist_function("SimConnect_RequestDataOnSimObject")
+        .whitelist_function("SimConnect_SubscribeToFacilities")
+        .whitelist_function("SimConnect_RequestFacilitiesList")
         .whitelist_type("SIMCONNECT_RECV")
         .whitelist_type("SIMCONNECT_RECV_ID")
         .whitelist_type("SIMCONNECT_RECV_EVENT")
         .whitelist_type("SIMCONNECT_RECV_SIMOBJECT_DATA")
+        .whitelist_type("SIMCONNECT_RECV_AIRPORT_LIST")
         .whitelist_type("SIMCONNECT_CLIENT_DATA_PERIOD")
         .whitelist_type("SIMCONNECT_RECV_OPEN")
+        .whitelist_type("SIMCONNECT_RECV_EXCEPTION")
+        .whitelist_var("SIMCONNECT_DATA_REQUEST_FLAG_CHANGED")
         .generate()
         .expect("Unable to generate bindings");
 

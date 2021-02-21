@@ -5,7 +5,7 @@ authors = ["Mihai Dinculescu <mihai.dinculescu@outlook.com>"]
 edition = "2018"
 
 [build-dependencies]
-bindgen = "0.56.0"
+bindgen = "0.57.0"
 
 [dependencies]
 num_enum = "0.5.1"

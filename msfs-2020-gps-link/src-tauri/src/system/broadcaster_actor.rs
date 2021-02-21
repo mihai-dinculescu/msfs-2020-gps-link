@@ -20,6 +20,7 @@ impl Actor for BroadcasterActor {
     #[instrument(name = "BroadcasterActorStarted", skip(self, _ctx))]
     fn started(&mut self, _ctx: &mut Self::Context) {
         let local_port = self.broadcast_port - 1;
+        let broadcast_netmask = self.broadcast_netmask.clone();
 
         let socket = match UdpSocket::bind(format!("{}:{}", "0.0.0.0", local_port)) {
             Ok(s) => s,
@@ -27,7 +28,7 @@ impl Actor for BroadcasterActor {
         };
 
         socket.set_broadcast(true).unwrap();
-        socket.connect(("255.255.255.255", local_port)).unwrap();
+        socket.connect((broadcast_netmask, local_port)).unwrap();
 
         self.socket = Some(socket);
     }
@@ -39,7 +40,6 @@ impl Actor for BroadcasterActor {
 impl Handler<GpsDataMessage> for BroadcasterActor {
     type Result = ();
 
-    #[instrument(name = "BroadcasterActor::Handler<GpsData>", skip(self, _ctx))]
     fn handle(&mut self, sim_data: GpsDataMessage, _ctx: &mut Context<Self>) -> Self::Result {
         if let Some(socket) = &self.socket {
             // use chrono::Utc;
@@ -59,7 +59,7 @@ impl Handler<GpsDataMessage> for BroadcasterActor {
                         sim_data.ground_speed
                     )
                     .as_bytes(),
-                    format!("{}:{}", "255.255.255.255", self.broadcast_port),
+                    format!("{}:{}", &self.broadcast_netmask, self.broadcast_port),
                 )
                 .unwrap();
         } else {

@@ -19,11 +19,12 @@ import { promisified } from 'tauri/api/tauri';
 
 import { IPAddressTextMask } from './IPAddressTextMask';
 import { StatusConnected, StatusConnecting } from './Status';
-import { useStyles } from '../hooks/useStyles';
 
-export const ConnectForm: React.FC = () => {
-    const classes = useStyles();
+interface ConnectFormProps {
+    boxClassName: string;
+}
 
+export const ConnectForm: React.FC<ConnectFormProps> = (props: ConnectFormProps) => {
     const [refreshRate, setRefreshRate] = React.useState('Fast');
     const [broadcastPort, setBroadcastPort] = React.useState(49002);
     const [broadcastNetmask, setBroadcastNetmask] = React.useState('255.255.255.255');
@@ -121,9 +122,10 @@ export const ConnectForm: React.FC = () => {
     } else if (isConnecting) {
         status = <StatusConnecting />;
     }
+
     return (
         <>
-            <Box my={4} className={classes.root}>
+            <Box my={4} className={props.boxClassName}>
                 <FormControl component="fieldset">
                     <FormLabel component="legend">Refresh rate</FormLabel>
                     <RadioGroup
@@ -188,7 +190,7 @@ export const ConnectForm: React.FC = () => {
                     />
                 </FormControl>
             </Box>
-            <Box my={4} className={classes.root}>
+            <Box my={4} className={props.boxClassName}>
                 <Button onClick={onStart} variant="contained" color="primary" disabled={isDisabled}>
                     Connect
                 </Button>

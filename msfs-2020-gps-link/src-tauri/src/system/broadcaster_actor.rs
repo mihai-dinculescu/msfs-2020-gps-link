@@ -55,8 +55,8 @@ impl Handler<GpsDataMessage> for BroadcasterActor {
                         sim_data.lon,
                         sim_data.lat,
                         sim_data.alt,
-                        sim_data.true_heading,
-                        sim_data.ground_speed
+                        sim_data.gps_ground_true_track,
+                        sim_data.gps_ground_speed
                     )
                     .as_bytes(),
                     format!("{}:{}", &self.broadcast_netmask, self.broadcast_port),

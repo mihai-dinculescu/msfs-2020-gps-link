@@ -85,7 +85,7 @@ impl Actor for SimconnectActor {
                             });
                             sc.add_to_data_definition(
                                 gps_data_request_id,
-                                "PLANE HEADING DEGREES TRUE",
+                                "GPS GROUND TRUE TRACK",
                                 "Degrees",
                             )
                             .unwrap_or_else(|_| {

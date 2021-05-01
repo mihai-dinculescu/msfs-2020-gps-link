@@ -10,8 +10,8 @@ pub struct GpsDataMessage {
     pub lat: f64,
     pub lon: f64,
     pub alt: f64,
-    pub true_heading: f64,
-    pub ground_speed: f64,
+    pub gps_ground_true_track: f64,
+    pub gps_ground_speed: f64,
 }
 
 #[derive(Debug, Clone, Message)]

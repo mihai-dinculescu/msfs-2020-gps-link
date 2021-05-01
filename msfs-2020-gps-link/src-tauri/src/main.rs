@@ -5,7 +5,7 @@
 
 use std::{thread, time};
 
-use actix::{Actor, System};
+use actix::{Actor, Arbiter};
 use cmd::{Cmd, CommandError, Response};
 use system::{coordinator_actor::CoordinatorActor, messages::CoordinatorMessage};
 use tokio::sync;
@@ -18,18 +18,18 @@ use tracing_subscriber::Registry;
 mod cmd;
 mod system;
 
-#[tracing::instrument]
-fn main() {
+#[actix::main]
+async fn main() {
     setup_logging();
     setup_app();
 }
 
+#[tracing::instrument]
 fn setup_app() {
     let (tx, rx) = sync::mpsc::channel::<CoordinatorMessage>(8);
 
-    tauri::spawn(|| {
-        let system = System::new("test");
-
+    let arbiter = Arbiter::new();
+    arbiter.spawn(async {
         let actor = CoordinatorActor {
             handle: None,
             rx: Some(rx),
@@ -39,9 +39,6 @@ fn setup_app() {
         };
 
         actor.start();
-
-        system.run().expect("Actix System couldn't start");
-        panic!("Actix System has stopped");
     });
 
     tauri::AppBuilder::new()
@@ -183,10 +180,14 @@ fn setup_app() {
         })
         .build()
         .run();
+
+    arbiter.stop();
 }
 
 fn setup_logging() {
-    let (tracer, _uninstall) = opentelemetry_jaeger::new_pipeline().install().expect("asd");
+    let tracer = opentelemetry_jaeger::new_pipeline()
+        .install_simple()
+        .expect("asd");
 
     let telemetry = tracing_opentelemetry::layer().with_tracer(tracer);
 

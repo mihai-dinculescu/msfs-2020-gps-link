@@ -1,6 +1,4 @@
-use actix::{
-    clock::delay_for, Actor, ActorContext, Addr, AsyncContext, Context, Handler, WrapFuture,
-};
+use actix::{clock::sleep, Actor, ActorContext, Addr, AsyncContext, Context, Handler, WrapFuture};
 use chrono::Utc;
 use simconnect_client::{ConditionEnum, Notification, PeriodEnum, SimConnect};
 use tracing::{error, info, instrument};
@@ -183,7 +181,7 @@ impl Actor for SimconnectActor {
                         200
                     };
 
-                    delay_for(std::time::Duration::from_millis(delay)).await;
+                    sleep(std::time::Duration::from_millis(delay)).await;
                 }
             }
             .into_actor(self);

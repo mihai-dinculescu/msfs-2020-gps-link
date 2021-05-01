@@ -5,8 +5,8 @@ authors = ["Mihai Dinculescu <mihai.dinculescu@outlook.com>"]
 edition = "2018"
 
 [build-dependencies]
-bindgen = "0.57.0"
+bindgen = "0.58"
 
 [dependencies]
-num_enum = "0.5.1"
-tracing = "0.1.22"
+num_enum = "0.5"
+tracing = "0.1"

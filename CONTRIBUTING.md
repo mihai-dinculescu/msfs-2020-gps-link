@@ -44,7 +44,9 @@ yarn tauri build
 
 The new installer can be found in `msfs-2020-gps-link\msfs-2020-gps-link\src-tauri\target\release\bundle\msi`.
 
-- Create the release and publish the installer archive
+Zip it up and rename the archive to `msfs-2020-gps-link-vX.X.X.zip`.
+
+- Create the GitHub release, add the change log, and attached the archive
 - Update the `latest_release` URL in README.md
 - Update `version.txt`
 - Commit & push

@@ -6,6 +6,12 @@ file. This change log follows the conventions of
 
 ## [Unreleased]
 
+## [v0.2.1] - 2021-05-01
+
+### Changed
+
+- The GPS track is now based on 'GPS GROUND TRUE TRACK' instead of 'PLANE HEADING DEGREES TRUE'
+
 ## [v0.2.0] - 2021-02-21
 
 ### Added
@@ -28,5 +34,6 @@ file. This change log follows the conventions of
 ### Initial Release of MSFS 2020 GPS Link
 
 [unreleased]: https://github.com/mihai-dinculescu/cargo-wipe
+[v0.2.1]: https://github.com/mihai-dinculescu/cargo-wipe/tree/v0.2.1
 [v0.2.0]: https://github.com/mihai-dinculescu/cargo-wipe/tree/v0.2.0
 [v0.1.0]: https://github.com/mihai-dinculescu/cargo-wipe/tree/v0.1.0

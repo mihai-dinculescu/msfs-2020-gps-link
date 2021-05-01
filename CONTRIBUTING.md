@@ -19,10 +19,10 @@ yarn tauri dev
 
 ## Releases
 
-- Update version in `msfs-2020-gps-link\src-tauri\Cargo.toml`
-- Update version in `msfs-2020-gps-link\package.json`
-- Update `version.txt`
-- Update the `latest_release` URL in README.md
+- Update the version in `msfs-2020-gps-link\src-tauri\Cargo.toml`
+- Update the version in `msfs-2020-gps-link\package.json`
+- Update CHANGELOG.md
+
 - Commit
 - Add tag
 
@@ -45,6 +45,9 @@ yarn tauri build
 The new installer can be found in `msfs-2020-gps-link\msfs-2020-gps-link\src-tauri\target\release\bundle\msi`.
 
 - Create the release and publish the installer archive
+- Update the `latest_release` URL in README.md
+- Update `version.txt`
+- Commit & push
 
 ## Troubleshooting
 

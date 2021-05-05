@@ -85,7 +85,7 @@ impl Actor for SimconnectActor {
                             });
                             sc.add_to_data_definition(
                                 gps_data_request_id,
-                                "GPS GROUND TRUE TRACK",
+                                "GPS GROUND MAGNETIC TRACK",
                                 "Degrees",
                             )
                             .unwrap_or_else(|_| {

@@ -48,25 +48,25 @@
     "react-dom": "^17.0.2",
     "react-text-mask": "^5.4.3",
     "tauri": "^0.14.1",
-    "uuidv4": "^6.2.7",
-    "web-vitals": "^1.1.1"
+    "uuidv4": "^6.2.8",
+    "web-vitals": "^1.1.2"
   },
   "devDependencies": {
-    "@babel/core": "^7.14.0",
-    "@babel/plugin-proposal-object-rest-spread": "^7.13.8",
-    "@testing-library/dom": "^7.30.4",
+    "@babel/core": "^7.14.3",
+    "@babel/plugin-proposal-object-rest-spread": "^7.14.4",
+    "@testing-library/dom": "^7.31.0",
     "@testing-library/jest-dom": "^5.12.0",
-    "@testing-library/react": "^11.2.6",
-    "@testing-library/user-event": "^13.1.8",
+    "@testing-library/react": "^11.2.7",
+    "@testing-library/user-event": "^13.1.9",
     "@types/jest": "^26.0.23",
-    "@types/node": "^15.0.1",
-    "@types/react": "^17.0.4",
-    "@types/react-dom": "^17.0.3",
+    "@types/node": "^15.6.1",
+    "@types/react": "^17.0.8",
+    "@types/react-dom": "^17.0.5",
     "@types/react-text-mask": "^5.4.7",
     "customize-cra": "^1.0.0",
-    "prettier": "^2.2.1",
+    "prettier": "^2.3.0",
     "react-app-rewired": "^2.1.8",
     "react-scripts": "4.0.3",
-    "typescript": "^4.2.4"
+    "typescript": "^4.3.2"
   }
 }

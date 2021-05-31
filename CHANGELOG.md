@@ -6,6 +6,12 @@ file. This change log follows the conventions of
 
 ## [Unreleased]
 
+## [v0.2.3] - 2021-05-31
+
+### Changed
+
+- The GPS Track is now calculated by subtracting MAGVAR from GPS GROUND MAGNETIC TRACK
+
 ## [v0.2.2] - 2021-05-05
 
 ### Changed
@@ -40,6 +46,7 @@ file. This change log follows the conventions of
 ### Initial Release of MSFS 2020 GPS Link
 
 [unreleased]: https://github.com/mihai-dinculescu/cargo-wipe
+[v0.2.3]: https://github.com/mihai-dinculescu/cargo-wipe/tree/v0.2.3
 [v0.2.2]: https://github.com/mihai-dinculescu/cargo-wipe/tree/v0.2.2
 [v0.2.1]: https://github.com/mihai-dinculescu/cargo-wipe/tree/v0.2.1
 [v0.2.0]: https://github.com/mihai-dinculescu/cargo-wipe/tree/v0.2.0

@@ -38,7 +38,7 @@ Contributions are welcome and encouraged! Please read [CONTRIBUTING.md][contribu
 [downloads_badge]: https://img.shields.io/github/downloads/mihai-dinculescu/msfs-2020-gps-link/total.svg
 [sky_demon_url]: https://www.skydemon.aero
 [garmin_pilot_url]: https://buy.garmin.com/en-US/US/p/115856
-[latest_release]: https://github.com/mihai-dinculescu/msfs-2020-gps-link/releases/download/v0.2.2/msfs-2020-gps-link-v0.2.2.zip
+[latest_release]: https://github.com/mihai-dinculescu/msfs-2020-gps-link/releases/download/v0.2.3/msfs-2020-gps-link-v0.2.3.zip
 [releases_url]: https://github.com/mihai-dinculescu/msfs-2020-gps-link/releases
 [usage]: https://github.com/mihai-dinculescu/msfs-2020-gps-link/blob/main/assets/usage.PNG
 [usage_skydemon]: https://github.com/mihai-dinculescu/msfs-2020-gps-link/blob/main/assets/usage-skydemon.PNG

@@ -10,7 +10,8 @@ pub struct GpsDataMessage {
     pub lat: f64,
     pub lon: f64,
     pub alt: f64,
-    pub gps_ground_true_track: f64,
+    pub gps_ground_magnetic_track: f64,
+    pub gps_magnetic_variation: f64,
     pub gps_ground_speed: f64,
 }
 

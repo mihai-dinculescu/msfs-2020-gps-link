@@ -48,15 +48,14 @@ impl Handler<GpsDataMessage> for BroadcasterActor {
             //     Utc::now().timestamp_millis(),
             //     sim_data
             // );
+
+            let track = sim_data.gps_ground_magnetic_track - sim_data.gps_magnetic_variation;
+
             socket
                 .send_to(
                     format!(
                         "XGPSMSFS,{},{},{},{},{}",
-                        sim_data.lon,
-                        sim_data.lat,
-                        sim_data.alt,
-                        sim_data.gps_ground_true_track,
-                        sim_data.gps_ground_speed
+                        sim_data.lon, sim_data.lat, sim_data.alt, track, sim_data.gps_ground_speed
                     )
                     .as_bytes(),
                     format!("{}:{}", &self.broadcast_netmask, self.broadcast_port),

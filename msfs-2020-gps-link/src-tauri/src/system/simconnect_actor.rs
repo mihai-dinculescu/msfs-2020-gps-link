@@ -91,6 +91,10 @@ impl Actor for SimconnectActor {
                             .unwrap_or_else(|_| {
                                 addr.do_send(StopMessage);
                             });
+                            sc.add_to_data_definition(gps_data_request_id, "MAGVAR", "Degrees")
+                                .unwrap_or_else(|_| {
+                                    addr.do_send(StopMessage);
+                                });
                             sc.add_to_data_definition(
                                 gps_data_request_id,
                                 "GPS GROUND SPEED",

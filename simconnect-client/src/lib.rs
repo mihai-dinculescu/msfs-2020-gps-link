@@ -26,7 +26,9 @@ macro_rules! ok_if_fail {
 
 macro_rules! as_c_string {
     ($target:expr) => {
-        std::ffi::CString::new($target).unwrap().as_ptr();
+        std::ffi::CString::new($target)
+            .expect("failed to create CString")
+            .as_ptr()
     };
 }
 
@@ -201,9 +203,9 @@ impl SimConnect {
                     )
                 };
 
-                let data: &bindings::DWORD = unsafe { &event.dwData };
+                let data_addr = std::ptr::addr_of!(event.dwData);
 
-                Some(Notification::Data(event.dwDefineID, data))
+                Some(Notification::Data(event.dwDefineID, data_addr))
             }
             bindings::SIMCONNECT_RECV_ID_SIMCONNECT_RECV_ID_AIRPORT_LIST => {
                 let event: &bindings::SIMCONNECT_RECV_AIRPORT_LIST = unsafe {
@@ -239,16 +241,17 @@ impl SimConnect {
     }
 }
 
-pub enum Notification<'a> {
+pub enum Notification {
     Open,
     Event(Event),
-    Data(u32, &'a u32),
+    Data(u32, *const u32),
     AirportList(Vec<AirportData>),
     Quit,
     Exception(u32),
 }
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct AirportData {
     icao: String,
     lat: f64,

@@ -15,7 +15,7 @@ import HelpIcon from '@material-ui/icons/Help';
 import React from 'react';
 import { v4 as uuidv4 } from 'uuid';
 
-import { promisified } from 'tauri/api/tauri';
+import { invoke } from '@tauri-apps/api/tauri';
 
 import { IPAddressTextMask } from './IPAddressTextMask';
 import { StatusConnected, StatusConnecting } from './Status';
@@ -32,8 +32,7 @@ export const ConnectForm: React.FC<ConnectFormProps> = (props: ConnectFormProps)
     const [isConnected, setIsConnected] = React.useState(false);
 
     const connect = React.useCallback(() => {
-        promisified({
-            cmd: 'start',
+        invoke('do_start', {
             requestId: uuidv4(),
             options: {
                 broadcastNetmask,
@@ -47,8 +46,7 @@ export const ConnectForm: React.FC<ConnectFormProps> = (props: ConnectFormProps)
 
     const getStatus = React.useCallback(() => {
         if (isConnecting || isConnected) {
-            promisified({
-                cmd: 'status',
+            invoke('do_status', {
                 requestId: uuidv4(),
             })
                 .then((response) => {
@@ -100,8 +98,7 @@ export const ConnectForm: React.FC<ConnectFormProps> = (props: ConnectFormProps)
         setIsConnecting(false);
         setIsConnected(false);
 
-        promisified({
-            cmd: 'stop',
+        invoke('do_stop', {
             requestId: uuidv4(),
         })
             .then((response) => {

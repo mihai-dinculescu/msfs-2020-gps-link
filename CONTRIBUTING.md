@@ -44,25 +44,10 @@ yarn tauri build
 
 The new installer can be found in `msfs-2020-gps-link\msfs-2020-gps-link\src-tauri\target\release\bundle\msi`.
 
-Zip it up and rename the archive to `msfs-2020-gps-link-vX.X.X.zip`.
-
-- Create the GitHub release, add the change log, and attach the archive
+- Create the GitHub release, add the change log, and attach the MSI
 - Update the `latest_release` URL in README.md
 - Update `version.txt`
 - Commit & push
-
-## Troubleshooting
-
-### 1. Tauri `target` path
-
-Tauri doesn't currently handle Rust workspaces very well. The following workaround is needed in order to make it successfully build the release bundle
-
-msfs-2020-gps-link/.cargo/config
-
-```toml
-[build]
-target-dir = "<full-path-to-project>/msfs-2020-gps-link/src-tauri/target"
-```
 
 ## Tracing
 

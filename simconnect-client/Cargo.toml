@@ -2,10 +2,12 @@
 name = "simconnect-client"
 version = "0.1.0"
 authors = ["Mihai Dinculescu <mihai.dinculescu@outlook.com>"]
-edition = "2018"
+edition = "2021"
+description = "SimConnect Client`"
+license = "MIT"
 
 [build-dependencies]
-bindgen = "0.58"
+bindgen = "0.59"
 
 [dependencies]
 num_enum = "0.5"

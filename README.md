@@ -2,6 +2,7 @@
 
 [![GitHub release][latest_release_badge]][releases_url]
 [![Github all releases][downloads_badge]][releases_url]
+[![CI][ci_badge]][ci]
 
 Transmit GPS data from Microsoft Flight Simulator 2020 to navigation apps.\
 Tested with [SkyDemon][sky_demon_url] and [Garmin Pilot][garmin_pilot_url].
@@ -37,6 +38,8 @@ Contributions are welcome and encouraged! Please read [CONTRIBUTING.md][contribu
 [latest_release]: https://github.com/mihai-dinculescu/msfs-2020-gps-link/releases/download/v0.2.3/msfs-2020-gps-link-v0.2.3.zip
 [latest_release_badge]: https://img.shields.io/github/release/mihai-dinculescu/msfs-2020-gps-link.svg
 [downloads_badge]: https://img.shields.io/github/downloads/mihai-dinculescu/msfs-2020-gps-link/total.svg
+[ci_badge]: https://github.com/mihai-dinculescu/msfs-2020-gps-link/workflows/CI/badge.svg?branch=main
+[ci]: https://github.com/mihai-dinculescu/msfs-2020-gps-link/actions
 [sky_demon_url]: https://www.skydemon.aero
 [garmin_pilot_url]: https://buy.garmin.com/en-US/US/p/115856
 [releases_url]: https://github.com/mihai-dinculescu/msfs-2020-gps-link/releases

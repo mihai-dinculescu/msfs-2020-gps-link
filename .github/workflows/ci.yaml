@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  rust_checks:
+    name: "Checks"
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v2
+      - name: "Copy SimConnect.h"
+        run: |
+          mkdir "C:\MSFS SDK\SimConnect SDK\include"
+          copy "simconnect-client\SimConnect.h" "C:\MSFS SDK\SimConnect SDK\include\SimConnect.h"
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "16.x"
+      - name: Yarn install
+        working-directory: ./msfs-2020-gps-link
+        run: yarn install
+      - name: Yarn build
+        working-directory: ./msfs-2020-gps-link
+        run: yarn build
+      - uses: davidB/rust-cargo-make@v1
+      - name: Run format
+        run: cargo make format
+      - name: Run check
+        run: cargo make check
+      - name: Run clippy
+        run: cargo make clippy
+      - name: Run test
+        run: cargo make test

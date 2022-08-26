@@ -42,7 +42,7 @@ git push --follow-tags
 yarn tauri build
 ```
 
-The new installer can be found in `msfs-2020-gps-link\msfs-2020-gps-link\src-tauri\target\release\bundle\msi`.
+The new installer can be found in `msfs-2020-gps-link\target\release\bundle\msi`.
 
 - Create the GitHub release, add the change log, and attach the MSI
 - Update the `latest_release` URL in README.md

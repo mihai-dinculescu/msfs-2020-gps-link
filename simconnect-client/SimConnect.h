@@ -301,6 +301,10 @@ SIMCONNECT_ENUM_FLAGS SIMCONNECT_WAYPOINT_FLAGS;
     static const DWORD SIMCONNECT_WAYPOINT_ON_GROUND               = 0x00100000;   // place this waypoint on the ground
     static const DWORD SIMCONNECT_WAYPOINT_REVERSE                 = 0x00200000;   // Back up to this waypoint. Only valid on first waypoint
     static const DWORD SIMCONNECT_WAYPOINT_WRAP_TO_FIRST           = 0x00400000;   // Wrap around back to first waypoint. Only valid on last waypoint.
+    static const DWORD SIMCONNECT_WAYPOINT_ALWAYS_BACKUP           = 0x00800000;   // Go from first waypoint to last one moving only backwards
+    static const DWORD SIMCONNECT_WAYPOINT_KEEP_LAST_HEADING       = 0x01000000;   // Object doesn't only go from waypoint to waypoint using position but it will also keep the same heading computed on the last 2 waypoints
+    static const DWORD SIMCONNECT_WAYPOINT_YIELD_TO_USER           = 0x02000000;   // Object will never be too close of the player. If waypoints pass too close of the player, the object will stop and wait
+    static const DWORD SIMCONNECT_WAYPOINT_CAN_REVERSE             = 0x04000000;   // This flags handle the behaviour of the object if it can't reach a waypoint. By default, it will take a other way and try to reach this point again. With this flag, object will try some stuff to reach this waypoint in a better condition (moving backwards...)
 
 SIMCONNECT_ENUM_FLAGS SIMCONNECT_EVENT_FLAG;
     static const DWORD SIMCONNECT_EVENT_FLAG_DEFAULT                  = 0x00000000;

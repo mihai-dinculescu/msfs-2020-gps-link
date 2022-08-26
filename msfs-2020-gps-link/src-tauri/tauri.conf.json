@@ -9,27 +9,19 @@
   "tauri": {
     "bundle": {
       "active": true,
-      "targets": "all",
-      "identifier": "com.tauri.dev",
-      "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"],
-      "resources": [],
-      "externalBin": [],
-      "copyright": "",
-      "category": "DeveloperTool",
-      "shortDescription": "",
-      "longDescription": "",
-      "deb": {
-        "depends": [],
-        "useBootstrapper": false
-      },
-      "macOS": {
-        "frameworks": [],
-        "minimumSystemVersion": "",
-        "useBootstrapper": false,
-        "exceptionDomain": "",
-        "signingIdentity": null,
-        "entitlements": null
-      },
+      "targets": "msi",
+      "identifier": "com.msfs-2020-gps-link",
+      "icon": [
+        "icons/32x32.png",
+        "icons/128x128.png",
+        "icons/128x128@2x.png",
+        "icons/icon.icns",
+        "icons/icon.ico"
+      ],
+      "copyright": "Copyright (c) 2020-2022 Mihai Dinculescu",
+      "category": "SimulationGame",
+      "shortDescription": "MSFS 2020 GPS Link",
+      "longDescription": "MSFS 2020 GPS Link. Transmit GPS data from Microsoft Flight Simulator 2020 to navigation apps.",
       "windows": {
         "certificateThumbprint": null,
         "digestAlgorithm": "sha256",

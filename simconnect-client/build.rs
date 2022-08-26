@@ -8,7 +8,7 @@ fn main() {
 
     let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
     let binary_name = "SimConnect";
-    let binary_name_dll = &format!("{}.dll", binary_name);
+    let binary_name_dll = &format!("{binary_name}.dll");
 
     let simconnect_path = PathBuf::from(env::current_dir().unwrap().to_str().unwrap());
     let simconnect_dir = simconnect_path.as_path().to_str().unwrap();

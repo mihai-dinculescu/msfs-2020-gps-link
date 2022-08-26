@@ -4,7 +4,7 @@ use tokio::sync;
 
 use simconnect_client::AirportData;
 
-#[derive(Debug, Copy, Clone, Message)]
+#[derive(Debug, Clone, Message)]
 #[rtype(result = "()")]
 pub struct GpsDataMessage {
     pub lat: f64,
@@ -21,10 +21,11 @@ pub struct AirportListMessage {
     pub data: Vec<AirportData>,
 }
 
-#[derive(Debug, Copy, Clone, Message)]
+#[derive(Debug, Clone, Message)]
 #[rtype(result = "()")]
 pub struct OnGroundMessage {
     pub sim_on_ground: f64,
+    pub atc_id: String,
 }
 
 #[derive(Debug, Message)]
@@ -45,7 +46,7 @@ pub enum CoordinatorMessage {
     },
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
 pub enum RefreshRate {
     Slow,
     Fast,

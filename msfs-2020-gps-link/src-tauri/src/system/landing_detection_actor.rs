@@ -27,21 +27,19 @@ impl Handler<OnGroundMessage> for LandingDetectionActor {
     fn handle(&mut self, sim_data: OnGroundMessage, _ctx: &mut Context<Self>) -> Self::Result {
         // TODO: rework this
         if sim_data.sim_on_ground == 1.0
-            && self.in_the_air == true
+            && self.in_the_air
             && self.last_gps_data.is_some()
             && self.take_off_gps_data.is_some()
         {
             // landing
             println!("landing {:?}", self.last_gps_data);
-            self.take_off_gps_data = self.last_gps_data;
+            self.take_off_gps_data = self.last_gps_data.clone();
             self.in_the_air = false;
-        } else if sim_data.sim_on_ground == 0.0
-            && self.in_the_air == false
-            && self.last_gps_data.is_some()
+        } else if sim_data.sim_on_ground == 0.0 && !self.in_the_air && self.last_gps_data.is_some()
         {
             // take-off
             println!("take-off {:?}", self.last_gps_data);
-            self.take_off_gps_data = self.last_gps_data;
+            self.take_off_gps_data = self.last_gps_data.clone();
             self.in_the_air = true;
         } else if sim_data.sim_on_ground == 1.0 {
             // reset

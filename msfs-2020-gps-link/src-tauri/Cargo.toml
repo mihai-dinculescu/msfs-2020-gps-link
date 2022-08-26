@@ -1,6 +1,6 @@
 [package]
 name = "MSFS-2020-GPS-Link"
-version = "0.2.3"
+version = "0.2.4"
 authors = [ "Mihai Dinculescu <mihai.dinculescu@outlook.com>" ]
 edition = "2021"
 description = "MSFS 2020 GPS Link"

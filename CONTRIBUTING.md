@@ -27,7 +27,7 @@ yarn tauri dev
 - Add tag
 
 ```bash
-git tag -a vX.X.X
+git tag -a vX.X.X -m "vX.X.X"
 ```
 
 - Push

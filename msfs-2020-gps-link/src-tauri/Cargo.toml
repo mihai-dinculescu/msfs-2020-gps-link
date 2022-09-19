@@ -27,7 +27,7 @@ opentelemetry-jaeger = { version = "0.16" }
 simconnect-client = { path = "../../simconnect-client" }
 
 [build-dependencies]
-tauri-build = { version = "1.0", features = [] }
+tauri-build = { version = "1.1", features = [] }
 
 [features]
 custom-protocol = [ "tauri/custom-protocol" ]

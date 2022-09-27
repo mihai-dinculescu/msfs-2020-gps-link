@@ -23,7 +23,7 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = [ "env-filter" ] }
 tracing-log = "0.1"
 tracing-opentelemetry = "0.17"
-opentelemetry-jaeger = { version = "0.16" }
+opentelemetry-jaeger = { version = "0.17" }
 simconnect-client = { path = "../../simconnect-client" }
 
 [build-dependencies]

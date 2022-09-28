@@ -17,7 +17,7 @@ tauri = {version = "1.0", features = ["api-all"] }
 actix = "0.13"
 serde_json = "1.0"
 serde = { version = "1.0", features = [ "derive" ] }
-tokio = { version = "1.20", features = [ "full" ] }
+tokio = { version = "1.21", features = [ "full" ] }
 chrono = "0.4"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = [ "env-filter" ] }

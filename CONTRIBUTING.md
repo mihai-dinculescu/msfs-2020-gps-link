@@ -14,6 +14,7 @@ Start msfs-2020-gps-link in dev mode
 
 ```bash
 cd msfs-2020-gps-link
+yarn install
 yarn tauri dev
 ```
 

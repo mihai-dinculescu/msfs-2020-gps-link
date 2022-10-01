@@ -50,7 +50,7 @@ fn setup_app() {
 }
 
 fn setup_logging() {
-    let tracer = opentelemetry_jaeger::new_pipeline()
+    let tracer = opentelemetry_jaeger::new_agent_pipeline()
         .install_simple()
         .expect("failed to set up tracing");
 

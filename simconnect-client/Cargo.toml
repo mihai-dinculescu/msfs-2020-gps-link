@@ -7,7 +7,7 @@ description = "SimConnect Client`"
 license = "MIT"
 
 [build-dependencies]
-bindgen = "0.60"
+bindgen = "0.61"
 
 [dependencies]
 num_enum = "0.5"

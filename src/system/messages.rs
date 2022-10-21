@@ -1,31 +1,38 @@
 use actix::Message;
 use serde::Deserialize;
+use simconnect_sdk::{Airport, SimConnectObject};
 use tokio::sync;
 
-use simconnect_client::AirportData;
-
-#[derive(Debug, Clone, Message)]
+#[derive(Debug, Clone, Message, SimConnectObject)]
 #[rtype(result = "()")]
+#[simconnect(period = "second")]
 pub struct GpsDataMessage {
+    #[simconnect(name = "PLANE LATITUDE", unit = "degrees")]
     pub lat: f64,
+    #[simconnect(name = "PLANE LONGITUDE", unit = "degrees")]
     pub lon: f64,
+    #[simconnect(name = "PLANE ALTITUDE", unit = "meters")]
     pub alt: f64,
+    #[simconnect(name = "GPS GROUND MAGNETIC TRACK", unit = "Degrees")]
     pub gps_ground_magnetic_track: f64,
+    #[simconnect(name = "MAGVAR", unit = "Degrees")]
     pub gps_magnetic_variation: f64,
+    #[simconnect(name = "GPS GROUND SPEED", unit = "Meters per second")]
     pub gps_ground_speed: f64,
+}
+
+#[derive(Debug, Clone, Message, SimConnectObject)]
+#[rtype(result = "()")]
+#[simconnect(period = "visual-frame", condition = "changed")]
+pub struct OnGroundMessage {
+    #[simconnect(name = "SIM ON GROUND")]
+    pub sim_on_ground: bool,
 }
 
 #[derive(Debug, Clone, Message)]
 #[rtype(result = "()")]
 pub struct AirportListMessage {
-    pub data: Vec<AirportData>,
-}
-
-#[derive(Debug, Clone, Message)]
-#[rtype(result = "()")]
-pub struct OnGroundMessage {
-    pub sim_on_ground: f64,
-    pub atc_id: String,
+    pub data: Vec<Airport>,
 }
 
 #[derive(Debug, Message)]

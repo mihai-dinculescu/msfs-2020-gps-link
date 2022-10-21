@@ -13,25 +13,23 @@ jobs:
     name: "Checks"
     runs-on: windows-2022
     steps:
-      - uses: actions/checkout@v2
-      - name: "Copy SimConnect.h"
-        run: |
-          mkdir "C:\MSFS SDK\SimConnect SDK\include"
-          copy "simconnect-client\SimConnect.h" "C:\MSFS SDK\SimConnect SDK\include\SimConnect.h"
-      - uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: davidB/rust-cargo-make@v1
+      - uses: actions-rs/install@v0.1
         with:
-          toolchain: stable
-          override: true
-      - uses: actions/setup-node@v2
+          crate: tauri-cli
+          version: 1.1.1
+          use-tool-cache: true
+      - uses: actions/setup-node@v3
         with:
-          node-version: "16.x"
+          node-version: 16
       - name: Yarn install
-        working-directory: ./msfs-2020-gps-link
+        working-directory: ./www
         run: yarn install
       - name: Yarn build
-        working-directory: ./msfs-2020-gps-link
+        working-directory: ./www
         run: yarn build
-      - uses: davidB/rust-cargo-make@v1
       - name: Run format
         run: cargo make format
       - name: Run check
@@ -40,3 +38,5 @@ jobs:
         run: cargo make clippy
       - name: Run test
         run: cargo make test
+      - name: Run tauri build
+        run: cargo tauri build

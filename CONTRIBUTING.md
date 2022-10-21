@@ -10,18 +10,22 @@ Clone the repo
 git clone https://github.com/mihai-dinculescu/msfs-2020-gps-link.git
 ```
 
-Start msfs-2020-gps-link in dev mode
+Install `tauri-cli` globally
 
 ```bash
-cd msfs-2020-gps-link
-yarn install
-yarn tauri dev
+cargo install tauri-cli
+```
+
+Run the app
+
+```bash
+cargo tauri dev
 ```
 
 ## Releases
 
-- Update the version in `msfs-2020-gps-link\src-tauri\Cargo.toml`
-- Update the version in `msfs-2020-gps-link\package.json`
+- Update the version in `src-tauri/Cargo.toml`
+- Update the version in `www/package.json`
 - Update CHANGELOG.md
 
 - Commit
@@ -40,11 +44,12 @@ git push --follow-tags
 - Build a new installer
 
 ```bash
-yarn tauri build
+cargo tauri build
 ```
 
-The new installer can be found in `msfs-2020-gps-link\target\release\bundle\msi`.
+The new installer can be found in `target/release/bundle/msi`.
 
+- Zip the msi installer and name the archive in the `msfs-2020-gps-link-vX.X.X.zip` format.
 - Create the GitHub release, add the change log, and attach the MSI
 - Update the `latest_release` URL in README.md
 - Update `version.txt`
@@ -65,4 +70,4 @@ cd msfs-2020-gps-link
 RUST_LOG=info yarn tauri dev
 ```
 
-Browse the Jaeger traces at http://localhost:16686.
+Browse the Jaeger traces at <http://localhost:16686>.

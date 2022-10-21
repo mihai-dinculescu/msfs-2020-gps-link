@@ -1,10 +1,10 @@
 {
   "build": {
-    "distDir": "../build",
+    "distDir": "./www/build",
     "devPath": "http://localhost:3000",
     "beforeDevCommand": "yarn start",
     "beforeBuildCommand": "yarn build",
-    "withGlobalTauri": false
+    "withGlobalTauri": true
   },
   "tauri": {
     "bundle": {
@@ -26,7 +26,10 @@
         "certificateThumbprint": null,
         "digestAlgorithm": "sha256",
         "timestampUrl": ""
-      }
+      },
+      "resources": [
+        "./SimConnect.dll"
+      ]
     },
     "allowlist": {
       "all": true

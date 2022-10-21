@@ -7,9 +7,9 @@
 Transmit GPS data from Microsoft Flight Simulator 2020 to navigation apps.\
 Tested with [SkyDemon][sky_demon_url] and [Garmin Pilot][garmin_pilot_url].
 
-### [Quick Download][latest_release]
+## [Quick Download][latest_release]
 
-# Usage
+## Usage
 
 - download the latest version from the [Releases][releases_url] page or by using the link above
 - unzip & install
@@ -17,13 +17,13 @@ Tested with [SkyDemon][sky_demon_url] and [Garmin Pilot][garmin_pilot_url].
 
 ![MSFS 2020 GPS Link Usage][usage]
 
-## SkyDemon
+### SkyDemon
 
 With `MSFS 2020 GPS Link` open and connected on your PC, open SkyDemon on your navigation device and press on `Fly` -> `Use X-Plane`.
 
 ![SkyDemon Usage][usage_skydemon]
 
-## Garmin Pilot
+### Garmin Pilot
 
 With `MSFS 2020 GPS Link` open and connected on your PC, open Garmin Pilot on your navigation device and press on `Settings` -> `GPS`.
 
@@ -31,7 +31,7 @@ Scroll to the bottom and you should see `SIMULATOR STATUS` showing an `amber`sta
 
 ![Garmin Pilot Usage][usage_garmin_pilot]
 
-# Contributing
+## Contributing
 
 Contributions are welcome and encouraged! Please read [CONTRIBUTING.md][contributing_url].
 

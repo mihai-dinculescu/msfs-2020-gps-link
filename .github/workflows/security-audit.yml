@@ -17,7 +17,7 @@ on:
 jobs:
   security_audit:
     name: "Security audit"
-    runs-on: windows-2022
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@stable

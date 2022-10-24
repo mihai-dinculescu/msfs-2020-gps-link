@@ -2868,9 +2868,9 @@ dependencies = [
 
 [[package]]
 name = "simconnect-sdk"
-version = "0.1.1"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "452abbcd0e58cbeabf85a8627f39f1b270532027d57acd094fa9979453e09b46"
+checksum = "c38ef1fecf8c3d7eaca9400c3cf566162045dcf26560f128f28ca7b67009694a"
 dependencies = [
  "bindgen",
  "num_enum",
@@ -2881,9 +2881,9 @@ dependencies = [
 
 [[package]]
 name = "simconnect-sdk-derive"
-version = "0.1.1"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cebf16410435bb423c3a2f272a0eb4525fef005742c600d82f67c8f237ae27ea"
+checksum = "6a607dccd9aeac229689ced083dd0618295729954b562fe0026b9785d1510f88"
 dependencies = [
  "once_cell",
  "proc-macro2",

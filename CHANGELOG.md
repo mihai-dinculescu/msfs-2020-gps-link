@@ -6,6 +6,10 @@ file. This change log follows the conventions of
 
 ## [Unreleased]
 
+### Changed
+
+- Updated to SimConnect SDK v0.1.3.
+
 ### Fixed
 
 - Fixed an issue that was preventing the SimConnect client from closing on user "Disconnect".

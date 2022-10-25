@@ -1,6 +1,6 @@
 use actix::{clock::sleep, Actor, ActorContext, Addr, AsyncContext, Context, Handler, WrapFuture};
 use chrono::Utc;
-use simconnect_sdk::{Condition, Notification, Period, SimConnect};
+use simconnect_sdk::{Condition, Notification, Period, SimConnect, SimConnectError};
 use tracing::{error, info, instrument};
 
 use crate::system::broadcaster_actor::BroadcasterActor;
@@ -28,22 +28,15 @@ impl Actor for SimconnectActor {
         let broadcaster_addr = self.broadcaster.clone();
         let landing_detection_addr = self.landing_detection.clone();
 
-        let sc = match SimConnect::new("Simple Program") {
-            Ok(sc) => Some(sc),
-            Err(_) => {
-                addr.do_send(StopMessage);
-                None
-            }
-        };
+        let fut = async move {
+            let result: Result<(), SimConnectError> = async {
+                let mut sc = SimConnect::new("Simple Program")?;
 
-        if let Some(mut sc) = sc {
-            info!("Connected");
-
-            let fut = async move {
+                info!("Connected");
                 let mut last_update = Utc::now();
 
                 loop {
-                    let notification = sc.get_next_dispatch().unwrap();
+                    let notification = sc.get_next_dispatch()?;
 
                     match notification {
                         Some(Notification::Open) => {
@@ -54,22 +47,13 @@ impl Actor for SimconnectActor {
                                 RefreshRate::Slow => (Period::Second, 0u32),
                             };
 
-                            match sc.register_object::<GpsDataMessage>() {
-                                Ok(request_id) => {
-                                    sc.request_data_on_sim_object(
-                                        request_id,
-                                        period,
-                                        Condition::None,
-                                        interval,
-                                    )
-                                    .unwrap_or_else(|_| {
-                                        addr.do_send(StopMessage);
-                                    });
-                                }
-                                Err(_) => {
-                                    addr.do_send(StopMessage);
-                                }
-                            };
+                            let request_id = sc.register_object::<GpsDataMessage>()?;
+                            sc.request_data_on_sim_object(
+                                request_id,
+                                period,
+                                Condition::None,
+                                interval,
+                            )?;
 
                             if landing_detection_enabled {
                                 if sc.register_object::<OnGroundMessage>().is_err() {
@@ -77,10 +61,7 @@ impl Actor for SimconnectActor {
                                 }
 
                                 // subscribe to the airport list
-                                sc.subscribe_to_facilities(simconnect_sdk::FacilityType::Airport)
-                                    .unwrap_or_else(|_| {
-                                        addr.do_send(StopMessage);
-                                    });
+                                sc.subscribe_to_facilities(simconnect_sdk::FacilityType::Airport)?;
                             }
                         }
                         Some(Notification::Quit) => {
@@ -110,9 +91,6 @@ impl Actor for SimconnectActor {
                                 data: airports.clone(),
                             });
                         }
-                        Some(Notification::Exception(ex)) => {
-                            error!("SimConnect Exception: {}", ex);
-                        }
                         _ => (),
                     }
 
@@ -125,10 +103,16 @@ impl Actor for SimconnectActor {
                     sleep(std::time::Duration::from_millis(delay)).await;
                 }
             }
-            .into_actor(self);
+            .await;
 
-            ctx.spawn(fut);
+            if let Err(e) = result {
+                error!("SimConnect error: {}", e);
+                addr.do_send(StopMessage);
+            }
         }
+        .into_actor(self);
+
+        ctx.spawn(fut);
     }
 
     #[instrument(name = "SimconnectActorStopped", skip(self, _ctx))]

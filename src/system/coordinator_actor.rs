@@ -150,7 +150,7 @@ impl CoordinatorActor {
             if addr.connected() {
                 addr.try_send(StopMessage).expect("Landing queue is full");
             }
-            self.simconnect = None;
+            self.landing_detection = None;
         }
 
         if let Some(addr) = &self.simconnect {

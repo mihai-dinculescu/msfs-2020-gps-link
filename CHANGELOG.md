@@ -6,6 +6,10 @@ file. This change log follows the conventions of
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed an issue that was preventing the SimConnect client from closing on user "Disconnect".
+
 ## [v0.2.4] - 2022-08-26
 
 ### Changed

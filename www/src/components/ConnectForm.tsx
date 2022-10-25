@@ -20,6 +20,10 @@ import { invoke } from '@tauri-apps/api/tauri';
 import { IPAddressTextMask } from './IPAddressTextMask';
 import { StatusConnected, StatusConnecting } from './Status';
 
+const INTERVAL_CONNECTING_MS = 3 * 1000;
+const INTERVAL_STATUS_CONNECTING_MS = 0.2 * 1000;
+const INTERVAL_STATUS_CONNECTED_MS = 3 * 1000;
+
 interface ConnectFormProps {
     boxClassName: string;
 }
@@ -28,8 +32,11 @@ export const ConnectForm: React.FC<ConnectFormProps> = (props: ConnectFormProps)
     const [refreshRate, setRefreshRate] = React.useState('Fast');
     const [broadcastPort, setBroadcastPort] = React.useState(49002);
     const [broadcastNetmask, setBroadcastNetmask] = React.useState('255.255.255.255');
-    const [isConnecting, setIsConnecting] = React.useState(false);
-    const [isConnected, setIsConnected] = React.useState(false);
+
+    const [connectionStatus, setConnectionStatus] = React.useState({
+        isConnecting: false,
+        isConnected: false,
+    });
 
     const connect = React.useCallback(() => {
         invoke('do_start', {
@@ -45,36 +52,46 @@ export const ConnectForm: React.FC<ConnectFormProps> = (props: ConnectFormProps)
     }, [broadcastNetmask, broadcastPort, refreshRate]);
 
     const getStatus = React.useCallback(() => {
-        if (isConnecting || isConnected) {
+        if (connectionStatus.isConnecting || connectionStatus.isConnected) {
             invoke('do_status', {
                 requestId: uuidv4(),
             })
                 .then((response) => {
                     const { message } = response as { message: string };
 
-                    if (message === 'OK') {
-                        setIsConnected(true);
-                    } else {
-                        setIsConnected(false);
-                    }
+                    setConnectionStatus((prevState) => ({
+                        ...prevState,
+                        isConnected: message === 'OK',
+                    }));
                 })
                 .catch((error) => {
                     console.error('Status', error);
                 });
         }
-    }, [isConnecting, isConnected]);
+    }, [connectionStatus.isConnecting, connectionStatus.isConnected]);
 
     React.useEffect(() => {
-        if (isConnecting && !isConnected) {
-            const timer = setInterval(connect, 3 * 1000);
+        if (connectionStatus.isConnecting && !connectionStatus.isConnected) {
+            const timer = setInterval(connect, INTERVAL_CONNECTING_MS);
             return () => clearInterval(timer);
         }
-    }, [isConnecting, isConnected, connect]);
+    }, [connectionStatus.isConnecting, connectionStatus.isConnected, connect]);
 
     React.useEffect(() => {
-        const timer = setInterval(getStatus, 3 * 1000);
-        return () => clearInterval(timer);
-    }, [getStatus]);
+        let timer: NodeJS.Timer | undefined = undefined;
+
+        if (connectionStatus.isConnecting && !connectionStatus.isConnected) {
+            timer = setInterval(getStatus, INTERVAL_STATUS_CONNECTING_MS);
+        } else if (connectionStatus.isConnected) {
+            timer = setInterval(getStatus, INTERVAL_STATUS_CONNECTED_MS);
+        }
+
+        return () => {
+            if (timer !== undefined) {
+                clearInterval(timer);
+            }
+        };
+    }, [connectionStatus.isConnecting, connectionStatus.isConnected, getStatus]);
 
     const refreshRateOnChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setRefreshRate(event.target.value);
@@ -89,14 +106,18 @@ export const ConnectForm: React.FC<ConnectFormProps> = (props: ConnectFormProps)
     };
 
     const onStart = () => {
-        setIsConnecting(true);
-        setIsConnected(false);
+        setConnectionStatus({
+            isConnecting: true,
+            isConnected: false,
+        });
         connect();
     };
 
     const onStop = () => {
-        setIsConnecting(false);
-        setIsConnected(false);
+        setConnectionStatus({
+            isConnecting: false,
+            isConnected: false,
+        });
 
         invoke('do_stop', {
             requestId: uuidv4(),
@@ -110,13 +131,13 @@ export const ConnectForm: React.FC<ConnectFormProps> = (props: ConnectFormProps)
             });
     };
 
-    const isDisabled = isConnecting || isConnected;
+    const isDisabled = connectionStatus.isConnecting || connectionStatus.isConnected;
 
     let status = null;
 
-    if (isConnected) {
+    if (connectionStatus.isConnected) {
         status = <StatusConnected />;
-    } else if (isConnecting) {
+    } else if (connectionStatus.isConnecting) {
         status = <StatusConnecting />;
     }
 

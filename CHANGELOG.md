@@ -9,10 +9,12 @@ file. This change log follows the conventions of
 ### Changed
 
 - Updated to SimConnect SDK v0.1.3.
+- The "Connected" status will now be reported much quicker (up to 15x times faster).
 
 ### Fixed
 
-- Fixed an issue that was preventing the SimConnect client from closing on user "Disconnect".
+- Fixed an issue that was preventing the SimConnect SDK from closing on user "Disconnect".
+- Fixed an issue that was causing SimConnect SDK to unnecessarily connect a second time on user "Connect".
 
 ## [v0.2.4] - 2022-08-26
 

@@ -1,7 +1,8 @@
 use serde::{Deserialize, Serialize};
 use std::{thread, time};
-use tokio::sync::{self, mpsc::Sender};
-use tracing::{debug, info, span, Level};
+use tokio::sync::{self, mpsc::Sender, oneshot::error::TryRecvError};
+use tracing::{error, info, instrument, Span};
+use tracing_opentelemetry::OpenTelemetrySpanExt;
 
 use crate::system::messages::{CoordinatorMessage, RefreshRate};
 
@@ -67,24 +68,18 @@ pub enum Cmd {
     },
 }
 
+#[instrument(name = "cmd::do_start", skip(state))]
 #[tauri::command]
 pub async fn do_start(
     request_id: String,
     options: StartOptions,
     state: tauri::State<'_, AppState>,
 ) -> Result<Response<'_>, CommandError> {
-    span!(
-        Level::INFO,
-        "Command",
-        command = "Start",
-        request_id = &(request_id.as_str())
-    );
-
     let tx_local = state.tx.clone();
 
     let result = tx_local
         .send(CoordinatorMessage::Start {
-            request_id,
+            context: Span::current().context(),
             refresh_rate: options.refresh_rate,
             broadcast_netmask: options.broadcast_netmask,
             broadcast_port: options.broadcast_port,
@@ -93,61 +88,56 @@ pub async fn do_start(
 
     match result {
         Ok(_) => {
-            info!(message = "OK");
-            Ok(Response { message: "OK" })
+            let message = "OK";
+
+            info!(response = ?message);
+            Ok(Response { message })
         }
         Err(e) => {
-            debug!(error = ?e, "Sending Start");
-            let message = e.to_string();
-            Err(CommandError::new(message))
+            error!(error = ?e, "the mpsc channel has closed");
+            Err(CommandError::new("the mpsc channel has closed".to_string()))
         }
     }
 }
 
+#[instrument(name = "cmd::do_stop", skip(state))]
 #[tauri::command]
 pub async fn do_stop(
     request_id: String,
     state: tauri::State<'_, AppState>,
 ) -> Result<Response<'_>, CommandError> {
-    span!(
-        Level::INFO,
-        "Command",
-        command = "Stop",
-        request_id = &(request_id.as_str())
-    );
-
     let tx_local = state.tx.clone();
-    let result = tx_local.send(CoordinatorMessage::Stop { request_id }).await;
+    let result = tx_local
+        .send(CoordinatorMessage::Stop {
+            context: Span::current().context(),
+        })
+        .await;
 
     match result {
         Ok(_) => {
-            info!(message = "OK");
-            Ok(Response { message: "OK" })
+            let message = "OK";
+
+            info!(response = ?message);
+            Ok(Response { message })
         }
         Err(e) => {
-            debug!(error = ?e, "Sending Stop");
-            Err(CommandError::new(e.to_string()))
+            error!(error = ?e, "the mpsc channel has closed");
+            Err(CommandError::new("the mpsc channel has closed".to_string()))
         }
     }
 }
 
+#[instrument(name = "cmd::do_status", skip(state))]
 #[tauri::command]
 pub async fn do_status(
     request_id: String,
     state: tauri::State<'_, AppState>,
 ) -> Result<Response<'_>, CommandError> {
-    span!(
-        Level::INFO,
-        "Command",
-        command = "Status",
-        request_id = &(request_id.as_str())
-    );
-
     let tx_local = state.tx.clone();
     let (response_tx, mut response_rx) = sync::oneshot::channel::<bool>();
     let result = tx_local
         .send(CoordinatorMessage::Status {
-            request_id,
+            context: Span::current().context(),
             response_channel: response_tx,
         })
         .await;
@@ -166,26 +156,26 @@ pub async fn do_status(
                             false => "ERROR",
                         };
 
-                        info!(message = ?message, "Status response");
-
+                        info!(response = ?message);
                         return Ok(Response { message });
                     }
-                    Err(_) => {
-                        thread::sleep(time::Duration::from_millis(100));
+                    Err(TryRecvError::Empty) => {
+                        counter += 1;
+
+                        if counter >= 5 {
+                            break;
+                        } else {
+                            thread::sleep(time::Duration::from_millis(100));
+                        }
                     }
+                    _ => return Err(CommandError::new("Error".to_string())),
                 };
-
-                counter += 1;
-
-                if counter >= 5 {
-                    break;
-                }
             }
             Err(CommandError::new("Timeout".to_string()))
         }
         Err(e) => {
-            debug!(error = ?e, "Sending Status");
-            Err(CommandError::new(e.to_string()))
+            error!(error = ?e, "the mpsc channel has closed");
+            Err(CommandError::new("the mpsc channel has closed".to_string()))
         }
     }
 }

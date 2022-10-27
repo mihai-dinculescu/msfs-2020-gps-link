@@ -1,32 +1,62 @@
 use actix::{Actor, ActorContext, Context, Handler};
-use tracing::instrument;
+use opentelemetry_api::Context as OpenTelemetryContext;
+use simconnect_sdk::Airport;
+use tracing::{info, instrument, Span};
+use tracing_opentelemetry::OpenTelemetrySpanExt;
 
-use super::messages::{AirportListMessage, GpsDataMessage, OnGroundMessage, StopMessage};
+use crate::system::messages::{SimConnectDataMessage, StopMessage};
+use crate::system::simconnect_objects::{GpsData, OnGround};
 
 #[derive(Debug, Default)]
 pub struct LandingDetectionActor {
-    last_gps_data: Option<GpsDataMessage>,
-    take_off_gps_data: Option<GpsDataMessage>,
+    context: OpenTelemetryContext,
+    last_gps_data: Option<GpsData>,
+    take_off_gps_data: Option<GpsData>,
     in_the_air: bool,
+}
+
+impl LandingDetectionActor {
+    pub fn new(context: OpenTelemetryContext) -> Self {
+        Self {
+            context,
+            ..Default::default()
+        }
+    }
 }
 
 impl Actor for LandingDetectionActor {
     type Context = Context<Self>;
 
-    #[instrument(name = "LandingActor::Started", skip(self, _ctx))]
-    fn started(&mut self, _ctx: &mut Self::Context) {}
+    #[instrument(name = "LandingActor::started", skip(self))]
+    fn started(&mut self, _: &mut Self::Context) {
+        Span::current().set_parent(self.context.clone());
+        info!("LandingDetectionActor started");
+    }
 
-    #[instrument(name = "LandingActor::Stopped", skip(self, _ctx))]
-    fn stopped(&mut self, _ctx: &mut Self::Context) {}
+    #[instrument(name = "LandingActor::stopped", skip(self))]
+    fn stopped(&mut self, _: &mut Self::Context) {
+        Span::current().set_parent(self.context.clone());
+        info!("LandingDetectionActor stopped");
+    }
 }
 
-impl Handler<OnGroundMessage> for LandingDetectionActor {
+impl Handler<SimConnectDataMessage<OnGround>> for LandingDetectionActor {
     type Result = ();
 
-    #[instrument(name = "LandingDetectionActor::Handler<OnGround>", skip(self, _ctx))]
-    fn handle(&mut self, sim_data: OnGroundMessage, _ctx: &mut Context<Self>) -> Self::Result {
+    #[instrument(
+        name = "LandingDetectionActor::handle::<OnGroundMessage>",
+        skip(self, message)
+    )]
+    fn handle(
+        &mut self,
+        message: SimConnectDataMessage<OnGround>,
+        _: &mut Context<Self>,
+    ) -> Self::Result {
+        Span::current().set_parent(message.context);
+        let data = message.data;
+
         // TODO: rework this
-        if sim_data.sim_on_ground
+        if data.sim_on_ground
             && self.in_the_air
             && self.last_gps_data.is_some()
             && self.take_off_gps_data.is_some()
@@ -35,12 +65,12 @@ impl Handler<OnGroundMessage> for LandingDetectionActor {
             println!("landing {:?}", self.last_gps_data);
             self.take_off_gps_data = self.last_gps_data.clone();
             self.in_the_air = false;
-        } else if !sim_data.sim_on_ground && !self.in_the_air && self.last_gps_data.is_some() {
+        } else if !data.sim_on_ground && !self.in_the_air && self.last_gps_data.is_some() {
             // take-off
             println!("take-off {:?}", self.last_gps_data);
             self.take_off_gps_data = self.last_gps_data.clone();
             self.in_the_air = true;
-        } else if sim_data.sim_on_ground {
+        } else if data.sim_on_ground {
             // reset
             println!("reset");
             self.take_off_gps_data = None;
@@ -49,23 +79,38 @@ impl Handler<OnGroundMessage> for LandingDetectionActor {
     }
 }
 
-impl Handler<GpsDataMessage> for LandingDetectionActor {
-    type Result = ();
-
-    #[instrument(name = "LandingDetectionActor::Handler<GpsData>", skip(self, _ctx))]
-    fn handle(&mut self, sim_data: GpsDataMessage, _ctx: &mut Context<Self>) -> Self::Result {
-        self.last_gps_data = Some(sim_data);
-    }
-}
-
-impl Handler<AirportListMessage> for LandingDetectionActor {
+impl Handler<SimConnectDataMessage<GpsData>> for LandingDetectionActor {
     type Result = ();
 
     #[instrument(
-        name = "LandingDetectionActor::Handler<AirportListMessage>",
-        skip(self, _ctx)
+        name = "LandingDetectionActor::handle::<GpsDataMessage>",
+        skip(self, message)
     )]
-    fn handle(&mut self, sim_data: AirportListMessage, _ctx: &mut Context<Self>) -> Self::Result {
+    fn handle(
+        &mut self,
+        message: SimConnectDataMessage<GpsData>,
+        _: &mut Context<Self>,
+    ) -> Self::Result {
+        Span::current().set_parent(message.context);
+        self.last_gps_data = Some(message.data);
+    }
+}
+
+impl Handler<SimConnectDataMessage<Vec<Airport>>> for LandingDetectionActor {
+    type Result = ();
+
+    #[instrument(
+        name = "LandingDetectionActor::handle::<AirportListMessage>",
+        skip(self, message)
+    )]
+    fn handle(
+        &mut self,
+        message: SimConnectDataMessage<Vec<Airport>>,
+        _: &mut Context<Self>,
+    ) -> Self::Result {
+        Span::current().set_parent(message.context);
+        let _ = message.data;
+
         // TODO: implement this
     }
 }
@@ -73,8 +118,13 @@ impl Handler<AirportListMessage> for LandingDetectionActor {
 impl Handler<StopMessage> for LandingDetectionActor {
     type Result = ();
 
-    #[instrument(name = "LandingDetectionActor::Handler<StopMessage>", skip(self, ctx))]
-    fn handle(&mut self, _: StopMessage, ctx: &mut Context<Self>) -> Self::Result {
+    #[instrument(
+        name = "LandingDetectionActor::handle::<StopMessage>",
+        skip(self, message, ctx)
+    )]
+    fn handle(&mut self, message: StopMessage, ctx: &mut Context<Self>) -> Self::Result {
+        Span::current().set_parent(message.context.clone());
+        info!(reason = ?message.reason, "LandingDetectionActor stopping");
         ctx.stop();
     }
 }

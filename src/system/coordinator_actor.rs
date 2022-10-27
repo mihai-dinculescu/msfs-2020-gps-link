@@ -1,53 +1,86 @@
-use actix::{Actor, Addr, AsyncContext, Context, Handler, SpawnHandle, WrapFuture};
+use actix::{
+    Actor, ActorContext, Addr, AsyncContext, Context, Handler, SpawnHandle, System, WrapFuture,
+};
 use tokio::sync::mpsc::Receiver;
-use tracing::{field, info, instrument, Span};
+use tracing::{debug, error, field, info, instrument, warn, Span};
+use tracing_opentelemetry::OpenTelemetrySpanExt;
 
-use super::{
+use crate::system::{
     broadcaster_actor::BroadcasterActor,
     landing_detection_actor::LandingDetectionActor,
     messages::{CoordinatorMessage, StopMessage},
-    simconnect_actor::SimconnectActor,
+    simconnect_actor::SimConnectActor,
 };
 
 #[derive(Debug)]
 pub struct CoordinatorActor {
-    pub handle: Option<SpawnHandle>,
-    pub rx: Option<Receiver<CoordinatorMessage>>,
-    pub broadcaster: Option<Addr<BroadcasterActor>>,
-    pub landing_detection: Option<Addr<LandingDetectionActor>>,
-    pub simconnect: Option<Addr<SimconnectActor>>,
+    rx: Option<Receiver<CoordinatorMessage>>,
+    handle: Option<SpawnHandle>,
+    broadcaster_addr: Option<Addr<BroadcasterActor>>,
+    landing_detection_addr: Option<Addr<LandingDetectionActor>>,
+    simconnect_addr: Option<Addr<SimConnectActor>>,
+}
+
+impl CoordinatorActor {
+    pub fn new(rx: Receiver<CoordinatorMessage>) -> Self {
+        Self {
+            rx: Some(rx),
+            handle: None,
+            broadcaster_addr: None,
+            landing_detection_addr: None,
+            simconnect_addr: None,
+        }
+    }
 }
 
 impl Actor for CoordinatorActor {
     type Context = Context<Self>;
 
-    #[instrument(name = "CoordinatorActorStarted", skip(self, ctx))]
+    #[instrument(name = "CoordinatorActor::started", skip(self, ctx))]
     fn started(&mut self, ctx: &mut Self::Context) {
         let addr = ctx.address();
-        let mut rx = self.rx.take().expect("mpsc socket is closed");
 
-        let fut = async move {
-            loop {
-                let data = rx.recv().await;
-                match data {
-                    Some(msg) => {
-                        addr.try_send(msg).expect("Coordinator mailbox is full");
-                    }
-                    None => {
-                        info!("got None");
+        match self.rx.take() {
+            Some(mut rx) => {
+                let fut = async move {
+                    loop {
+                        match rx.recv().await {
+                            Some(message) => {
+                                addr.try_send(message)
+                                    .expect("CoordinatorActor mailbox is full");
+                            }
+                            None => {
+                                error!("the mpsc channel has closed");
+                                addr.try_send(StopMessage {
+                                    reason: "the mpsc channel has closed".to_string(),
+                                    context: Span::current().context(),
+                                })
+                                .expect("CoordinatorActor mailbox is full");
+                            }
+                        }
                     }
                 }
+                .into_actor(self);
+
+                let handle = ctx.spawn(fut);
+                self.handle = Some(handle);
+
+                info!("CoordinatorActor started");
+            }
+            None => {
+                error!("no mpsc receiver has been provided");
+                addr.try_send(StopMessage {
+                    reason: "no mpsc receiver has been provided".to_string(),
+                    context: Span::current().context(),
+                })
+                .expect("CoordinatorActor mailbox is full");
             }
         }
-        .into_actor(self);
-
-        let handle = ctx.spawn(fut);
-        self.handle = Some(handle);
     }
 
-    #[instrument(name = "CoordinatorActorStopped", skip(self, _ctx))]
-    fn stopped(&mut self, _ctx: &mut Self::Context) {
-        info!("Coordinator stopped");
+    #[instrument(name = "CoordinatorActor::stopped", skip(self))]
+    fn stopped(&mut self, _: &mut Self::Context) {
+        info!("CoordinatorActor stopped");
     }
 }
 
@@ -56,80 +89,88 @@ impl Handler<CoordinatorMessage> for CoordinatorActor {
 
     #[instrument(
         name = "CoordinatorActor::Handler<CoordinatorMessage>",
-        skip(self, _ctx),
+        skip(self, message),
         fields(request_id = field::Empty)
     )]
-    fn handle(&mut self, message: CoordinatorMessage, _ctx: &mut Context<Self>) -> Self::Result {
+    fn handle(&mut self, message: CoordinatorMessage, _: &mut Context<Self>) -> Self::Result {
         let span = Span::current();
 
         match message {
             CoordinatorMessage::Start {
-                request_id,
+                context,
                 refresh_rate,
                 broadcast_netmask,
                 broadcast_port,
             } => {
-                span.record("request_id", &(request_id.as_str()));
-                self.stop_actors();
+                span.set_parent(context);
+                debug!("CoordinatorActor received Start");
 
-                let broadcaster = BroadcasterActor {
-                    socket: None,
-                    broadcast_netmask,
-                    broadcast_port,
-                }
-                .start();
+                self.stop_actors(StopMessage {
+                    context: span.context(),
+                    reason: "Start".to_string(),
+                });
 
-                let landing = LandingDetectionActor::default().start();
+                let broadcaster_addr =
+                    BroadcasterActor::new(span.context(), broadcast_port, broadcast_netmask)
+                        .start();
 
-                let simconnect = SimconnectActor {
+                let landing_detection_addr = LandingDetectionActor::new(span.context()).start();
+
+                let simconnect = SimConnectActor::new(
+                    span.context(),
                     refresh_rate,
                     // disabled for now as this functionality is not fully implemented
-                    landing_detection_enabled: false,
-                    broadcaster: broadcaster.clone(),
-                    landing_detection: landing.clone(),
-                }
+                    false,
+                    broadcaster_addr.clone(),
+                    landing_detection_addr.clone(),
+                )
                 .start();
 
-                self.broadcaster = Some(broadcaster);
-                self.landing_detection = Some(landing);
-                self.simconnect = Some(simconnect);
+                self.broadcaster_addr = Some(broadcaster_addr);
+                self.landing_detection_addr = Some(landing_detection_addr);
+                self.simconnect_addr = Some(simconnect);
             }
-            CoordinatorMessage::Stop { request_id } => {
-                span.record("request_id", &(request_id.as_str()));
-                self.stop_actors();
+            CoordinatorMessage::Stop { context } => {
+                span.set_parent(context);
+                debug!("CoordinatorActor received Stop");
+
+                self.stop_actors(StopMessage {
+                    context: span.context(),
+                    reason: "Stop".to_string(),
+                });
             }
             CoordinatorMessage::Status {
-                request_id,
+                context,
                 response_channel,
             } => {
-                span.record("request_id", &(request_id.as_str()));
-                let mut response = true;
+                span.set_parent(context);
+                debug!("CoordinatorActor received Status");
 
-                if let Some(addr) = &self.broadcaster {
-                    if !addr.connected() {
-                        response = false;
+                let mut actors_alive = 0;
+
+                if let Some(addr) = &self.broadcaster_addr {
+                    if addr.connected() {
+                        actors_alive += 1;
                     }
-                } else {
-                    response = false;
                 }
 
-                if let Some(addr) = &self.landing_detection {
-                    if !addr.connected() {
-                        response = false;
+                if let Some(addr) = &self.landing_detection_addr {
+                    if addr.connected() {
+                        actors_alive += 1;
                     }
-                } else {
-                    response = false;
                 }
 
-                if let Some(addr) = &self.simconnect {
-                    if !addr.connected() {
-                        response = false;
+                if let Some(addr) = &self.simconnect_addr {
+                    if addr.connected() {
+                        actors_alive += 1;
                     }
-                } else {
-                    response = false;
                 }
 
-                let _ = response_channel.send(response);
+                let response = actors_alive == 3;
+
+                if let Err(e) = response_channel.send(response) {
+                    warn!(error = ?e, "failed to send through the mpsc channel");
+                }
             }
         }
     }
@@ -137,28 +178,54 @@ impl Handler<CoordinatorMessage> for CoordinatorActor {
 
 impl CoordinatorActor {
     #[instrument(name = "CoordinatorActor::stop_actors", skip(self))]
-    fn stop_actors(&mut self) {
-        if let Some(addr) = &self.broadcaster {
+    fn stop_actors(&mut self, message: StopMessage) {
+        Span::current().set_parent(message.context);
+
+        let message = StopMessage {
+            context: Span::current().context(),
+            ..message
+        };
+
+        if let Some(addr) = &self.broadcaster_addr {
             if addr.connected() {
-                addr.try_send(StopMessage)
-                    .expect("Broadcaster queue is full");
+                addr.try_send(message.clone())
+                    .expect("BroadcasterActor queue is full");
             }
-            self.broadcaster = None;
+            self.broadcaster_addr = None;
         }
 
-        if let Some(addr) = &self.landing_detection {
+        if let Some(addr) = &self.landing_detection_addr {
             if addr.connected() {
-                addr.try_send(StopMessage).expect("Landing queue is full");
+                addr.try_send(message.clone())
+                    .expect("LandingDetectionActor queue is full");
             }
-            self.landing_detection = None;
+            self.landing_detection_addr = None;
         }
 
-        if let Some(addr) = &self.simconnect {
+        if let Some(addr) = &self.simconnect_addr {
             if addr.connected() {
-                addr.try_send(StopMessage)
-                    .expect("Simconnect queue is full");
+                addr.try_send(message)
+                    .expect("SimConnectActor queue is full");
             }
-            self.simconnect = None;
+            self.simconnect_addr = None;
         }
+    }
+}
+
+impl Handler<StopMessage> for CoordinatorActor {
+    type Result = ();
+
+    #[instrument(
+        name = "CoordinatorActor::handle::<StopMessage>",
+        skip(self, message, ctx)
+    )]
+    fn handle(&mut self, message: StopMessage, ctx: &mut Context<Self>) -> Self::Result {
+        Span::current().set_parent(message.context.clone());
+
+        info!(reason = ?message.reason, "CoordinatorActor stopping");
+        ctx.stop();
+
+        info!("Stopping the whole system...");
+        System::current().stop();
     }
 }

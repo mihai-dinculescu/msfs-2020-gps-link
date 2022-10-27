@@ -5,7 +5,9 @@
 
 use actix::{Actor, Arbiter};
 use tokio::sync;
+use tracing::info;
 use tracing::subscriber;
+use tracing::Instrument;
 use tracing_log::LogTracer;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::EnvFilter;
@@ -23,22 +25,20 @@ async fn main() {
     setup_app();
 }
 
-#[tracing::instrument]
+#[tracing::instrument(name = "setup_app")]
 fn setup_app() {
     let (tx, rx) = sync::mpsc::channel::<CoordinatorMessage>(8);
 
     let arbiter = Arbiter::new();
-    arbiter.spawn(async {
-        let actor = CoordinatorActor {
-            handle: None,
-            rx: Some(rx),
-            broadcaster: None,
-            landing_detection: None,
-            simconnect: None,
-        };
+    arbiter.spawn(
+        async {
+            let actor = CoordinatorActor::new(rx);
 
-        actor.start();
-    });
+            info!("Starting CoordinationActor");
+            actor.start();
+        }
+        .in_current_span(),
+    );
 
     tauri::Builder::default()
         .manage(AppState { tx })
@@ -51,16 +51,14 @@ fn setup_app() {
 
 fn setup_logging() {
     let tracer = opentelemetry_jaeger::new_agent_pipeline()
+        .with_service_name("MSFS 2020 GPS Link")
         .install_simple()
         .expect("failed to set up tracing");
 
     let telemetry = tracing_opentelemetry::layer().with_tracer(tracer);
 
     let subscriber = Registry::default()
-        .with(
-            tracing_subscriber::fmt::Layer::default()
-                .with_span_events(tracing_subscriber::fmt::format::FmtSpan::FULL),
-        )
+        .with(tracing_subscriber::fmt::Layer::default())
         .with(EnvFilter::from_default_env())
         .with(telemetry);
 

@@ -10,6 +10,7 @@ file. This change log follows the conventions of
 
 - Updated to SimConnect SDK v0.1.3.
 - The "Connected" status will now be reported much quicker (up to 15x times faster).
+- Error handling and tracing have been improved.
 
 ### Fixed
 

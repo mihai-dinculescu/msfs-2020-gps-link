@@ -1,10 +1,11 @@
+use opentelemetry_api::Context;
 use serde::{Deserialize, Serialize};
 use std::{thread, time};
 use tokio::sync::{self, mpsc::Sender, oneshot::error::TryRecvError};
-use tracing::{error, info, instrument, Span};
+use tracing::{error, info, info_span, instrument, Span};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 
-use crate::system::messages::{CoordinatorMessage, RefreshRate};
+use crate::system::messages::{CoordinatorMessage, GetStatusMessage, RefreshRate};
 
 pub struct AppState {
     pub tx: Sender<CoordinatorMessage>,
@@ -42,6 +43,12 @@ impl std::fmt::Display for CommandError {
 
 impl std::error::Error for CommandError {}
 
+#[derive(Debug)]
+pub struct StatusResponse {
+    pub context: Context,
+    pub status: bool,
+}
+
 // The commands definitions
 // Deserialized from JS
 #[derive(Debug, Deserialize)]
@@ -68,9 +75,9 @@ pub enum Cmd {
     },
 }
 
-#[instrument(name = "cmd::do_start", skip(state))]
+#[instrument(name = "cmd::cmd_start", skip(state))]
 #[tauri::command]
-pub async fn do_start(
+pub async fn cmd_start(
     request_id: String,
     options: StartOptions,
     state: tauri::State<'_, AppState>,
@@ -100,9 +107,9 @@ pub async fn do_start(
     }
 }
 
-#[instrument(name = "cmd::do_stop", skip(state))]
+#[instrument(name = "cmd::cmd_stop", skip(state))]
 #[tauri::command]
-pub async fn do_stop(
+pub async fn cmd_stop(
     request_id: String,
     state: tauri::State<'_, AppState>,
 ) -> Result<Response<'_>, CommandError> {
@@ -127,19 +134,19 @@ pub async fn do_stop(
     }
 }
 
-#[instrument(name = "cmd::do_status", skip(state))]
+#[instrument(name = "cmd::cmd_get_status", skip(state))]
 #[tauri::command]
-pub async fn do_status(
+pub async fn cmd_get_status(
     request_id: String,
     state: tauri::State<'_, AppState>,
 ) -> Result<Response<'_>, CommandError> {
     let tx_local = state.tx.clone();
-    let (response_tx, mut response_rx) = sync::oneshot::channel::<bool>();
+    let (response_tx, mut response_rx) = sync::oneshot::channel::<StatusResponse>();
     let result = tx_local
-        .send(CoordinatorMessage::Status {
+        .send(CoordinatorMessage::Status(GetStatusMessage {
             context: Span::current().context(),
             response_channel: response_tx,
-        })
+        }))
         .await;
 
     match result {
@@ -151,24 +158,31 @@ pub async fn do_status(
 
                 match response {
                     Ok(value) => {
-                        let message = match value {
-                            true => "OK",
-                            false => "ERROR",
+                        let message = match value.status {
+                            true => "CONNECTED",
+                            false => "NOT_CONNECTED",
                         };
 
-                        info!(response = ?message);
+                        let span = info_span!("cmd::cmd_get_status::recv");
+                        span.set_parent(value.context);
+                        span.in_scope(|| {
+                            info!(response = ?message, "Returning");
+                        });
+
                         return Ok(Response { message });
                     }
                     Err(TryRecvError::Empty) => {
                         counter += 1;
 
-                        if counter >= 5 {
+                        if counter >= 10 {
                             break;
                         } else {
                             thread::sleep(time::Duration::from_millis(100));
                         }
                     }
-                    _ => return Err(CommandError::new("Error".to_string())),
+                    Err(TryRecvError::Closed) => {
+                        return Err(CommandError::new("ERROR".to_string()))
+                    }
                 };
             }
             Err(CommandError::new("Timeout".to_string()))

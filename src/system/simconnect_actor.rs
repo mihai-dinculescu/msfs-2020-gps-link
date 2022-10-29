@@ -1,21 +1,33 @@
+use std::time::SystemTime;
+
 use actix::{clock::sleep, Actor, ActorContext, Addr, AsyncContext, Context, Handler, WrapFuture};
 use opentelemetry_api::Context as OpenTelemetryContext;
-use simconnect_sdk::{Condition, Notification, Period, SimConnect, SimConnectError};
-use tracing::{debug_span, error, info, instrument, trace, Instrument, Span};
+use simconnect_sdk::{
+    Condition, Notification, Period, SimConnect, SimConnectError, SystemEvent, SystemEventRequest,
+};
+use tracing::{debug_span, error, info, instrument, trace, warn, Instrument, Span};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 
 use crate::system::broadcaster_actor::BroadcasterActor;
+use crate::system::coordinator_actor::CoordinatorActor;
 use crate::system::landing_detection_actor::LandingDetectionActor;
-use crate::system::messages::{RefreshRate, SimConnectDataMessage, StopMessage};
+use crate::system::messages::{
+    GetStatusMessage, GetStatusResponseMessage, RefreshRate, SimConnectDataMessage, SimConnectPing,
+    StopMessage,
+};
 use crate::system::simconnect_objects::{GpsData, OnGround};
+
+const SIMCONNECT_TIMEOUT_S: u64 = 15;
 
 #[derive(Debug)]
 pub struct SimConnectActor {
     context: OpenTelemetryContext,
     refresh_rate: RefreshRate,
     landing_detection_enabled: bool,
+    coordinator_addr: Addr<CoordinatorActor>,
     broadcaster_addr: Addr<BroadcasterActor>,
     landing_detection_addr: Addr<LandingDetectionActor>,
+    last_ping: Option<SystemTime>,
 }
 
 impl SimConnectActor {
@@ -23,6 +35,7 @@ impl SimConnectActor {
         context: OpenTelemetryContext,
         refresh_rate: RefreshRate,
         landing_detection_enabled: bool,
+        coordinator_addr: Addr<CoordinatorActor>,
         broadcaster_addr: Addr<BroadcasterActor>,
         landing_detection_addr: Addr<LandingDetectionActor>,
     ) -> Self {
@@ -30,8 +43,10 @@ impl SimConnectActor {
             context,
             refresh_rate,
             landing_detection_enabled,
+            coordinator_addr,
             broadcaster_addr,
             landing_detection_addr,
+            last_ping: None,
         }
     }
 }
@@ -82,9 +97,18 @@ impl SimConnectActor {
                                 // subscribe to the airport list
                                 sc.subscribe_to_facilities(simconnect_sdk::FacilityType::Airport)?;
                             }
+
+                            sc.subscribe_to_system_event(SystemEventRequest::FourSeconds)?;
+
+                            // it's fine not to check the result here
+                            // because the actor will be stopped anyway
+                            addr.do_send(SimConnectPing);
                         }
                         Notification::Quit => {
                             info!("SimConnect SDK: Received Quit");
+
+                            // it's fine not to check the result here
+                            // because the actor will be stopped anyway
                             addr.do_send(StopMessage {
                                 context: span.context(),
                                 reason: "SimConnect SDK: Received Quit".to_string(),
@@ -100,9 +124,13 @@ impl SimConnectActor {
                                 };
 
                                 if landing_detection_enabled {
+                                    // it's fine not to check the result here
+                                    // because the actor will be stopped anyway
                                     landing_detection_addr.do_send(message.clone());
                                 }
 
+                                // it's fine not to check the result here
+                                // because the actor will be stopped anyway
                                 broadcaster_addr.do_send(message);
 
                                 continue;
@@ -115,6 +143,8 @@ impl SimConnectActor {
                                     data: on_ground_data,
                                 };
 
+                                // it's fine not to check the result here
+                                // because the actor will be stopped anyway
                                 landing_detection_addr.do_send(message);
 
                                 continue;
@@ -128,7 +158,18 @@ impl SimConnectActor {
                                 data: airports,
                             };
 
+                            // it's fine not to check the result here
+                            // because the actor will be stopped anyway
                             landing_detection_addr.do_send(message);
+                        }
+                        Notification::SystemEvent(event) => {
+                            trace!("SimConnect SDK: Received SystemEvent");
+
+                            if event == SystemEvent::FourSeconds {
+                                // it's fine not to check the result here
+                                // because the actor will be stopped anyway
+                                addr.do_send(SimConnectPing);
+                            }
                         }
                         _ => (),
                     }
@@ -147,6 +188,9 @@ impl SimConnectActor {
 
         if let Err(e) = result {
             error!(error = ?e, "SimConnect SDK Error");
+
+            // it's fine not to check the result here
+            // because the actor will be stopped anyway
             addr.do_send(StopMessage {
                 context: Span::current().context(),
                 reason: "SimConnect SDK Error".to_string(),
@@ -181,6 +225,53 @@ impl Actor for SimConnectActor {
     fn stopped(&mut self, _: &mut Self::Context) {
         Span::current().set_parent(self.context.clone());
         info!("SimConnectActor stopped");
+    }
+}
+
+impl Handler<SimConnectPing> for SimConnectActor {
+    type Result = ();
+
+    #[instrument(name = "SimConnectActor::handle::<SimConnectPing>", skip(self))]
+    fn handle(&mut self, _: SimConnectPing, _: &mut Context<Self>) -> Self::Result {
+        Span::current().set_parent(self.context.clone());
+        self.last_ping.replace(SystemTime::now());
+    }
+}
+
+impl Handler<GetStatusMessage> for SimConnectActor {
+    type Result = ();
+
+    #[instrument(
+        name = "SimConnectActor::handle::<GetStatusMessage>",
+        skip(self, message)
+    )]
+    fn handle(&mut self, message: GetStatusMessage, _: &mut Context<Self>) -> Self::Result {
+        Span::current().set_parent(message.context.clone());
+
+        let status = match self.last_ping {
+            Some(last_ping) => {
+                let now = SystemTime::now();
+                let elapsed = now.duration_since(last_ping).unwrap_or_default();
+                let status = elapsed.as_secs() < SIMCONNECT_TIMEOUT_S;
+
+                if !status {
+                    warn!(
+                        "SimConnect SDK: Last ping is older than {SIMCONNECT_TIMEOUT_S} seconds."
+                    );
+                }
+
+                status
+            }
+            None => false,
+        };
+
+        // it's fine not to check the result here
+        // because the worst that can happen is that the get status command will timeout
+        self.coordinator_addr.do_send(GetStatusResponseMessage {
+            context: Span::current().context(),
+            status,
+            response_channel: message.response_channel,
+        });
     }
 }
 

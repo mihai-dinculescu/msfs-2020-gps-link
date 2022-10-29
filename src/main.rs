@@ -16,7 +16,7 @@ use tracing_subscriber::Registry;
 mod cmd;
 mod system;
 
-use cmd::{do_start, do_status, do_stop, AppState};
+use cmd::{cmd_get_status, cmd_start, cmd_stop, AppState};
 use system::{coordinator_actor::CoordinatorActor, messages::CoordinatorMessage};
 
 #[actix::main]
@@ -42,7 +42,11 @@ fn setup_app() {
 
     tauri::Builder::default()
         .manage(AppState { tx })
-        .invoke_handler(tauri::generate_handler![do_start, do_stop, do_status])
+        .invoke_handler(tauri::generate_handler![
+            cmd_start,
+            cmd_stop,
+            cmd_get_status
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 

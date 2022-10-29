@@ -21,7 +21,7 @@ import { IPAddressTextMask } from './IPAddressTextMask';
 import { StatusConnected, StatusConnecting } from './Status';
 
 const INTERVAL_CONNECTING_MS = 3 * 1000;
-const INTERVAL_STATUS_CONNECTING_MS = 0.2 * 1000;
+const INTERVAL_STATUS_CONNECTING_MS = 0.5 * 1000;
 const INTERVAL_STATUS_CONNECTED_MS = 3 * 1000;
 
 interface ConnectFormProps {
@@ -39,7 +39,7 @@ export const ConnectForm: React.FC<ConnectFormProps> = (props: ConnectFormProps)
     });
 
     const connect = React.useCallback(() => {
-        invoke('do_start', {
+        invoke('cmd_start', {
             requestId: uuidv4(),
             options: {
                 broadcastNetmask,
@@ -53,16 +53,18 @@ export const ConnectForm: React.FC<ConnectFormProps> = (props: ConnectFormProps)
 
     const getStatus = React.useCallback(() => {
         if (connectionStatus.isConnecting || connectionStatus.isConnected) {
-            invoke('do_status', {
+            invoke('cmd_get_status', {
                 requestId: uuidv4(),
             })
                 .then((response) => {
                     const { message } = response as { message: string };
 
-                    setConnectionStatus((prevState) => ({
-                        ...prevState,
-                        isConnected: message === 'OK',
-                    }));
+                    if (message !== 'ERROR') {
+                        setConnectionStatus((prevState) => ({
+                            ...prevState,
+                            isConnected: message === 'CONNECTED',
+                        }));
+                    }
                 })
                 .catch((error) => {
                     console.error('Status', error);
@@ -119,7 +121,7 @@ export const ConnectForm: React.FC<ConnectFormProps> = (props: ConnectFormProps)
             isConnected: false,
         });
 
-        invoke('do_stop', {
+        invoke('cmd_stop', {
             requestId: uuidv4(),
         })
             .then((response) => {

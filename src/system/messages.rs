@@ -3,6 +3,8 @@ use opentelemetry_api::Context;
 use serde::Deserialize;
 use tokio::sync;
 
+use crate::cmd::StatusResponse;
+
 #[derive(Debug, Clone, Message)]
 #[rtype(result = "()")]
 pub struct SimConnectDataMessage<T> {
@@ -22,11 +24,27 @@ pub enum CoordinatorMessage {
     Stop {
         context: Context,
     },
-    Status {
-        context: Context,
-        response_channel: sync::oneshot::Sender<bool>,
-    },
+    Status(GetStatusMessage),
 }
+
+#[derive(Debug, Message)]
+#[rtype(result = "()")]
+pub struct GetStatusMessage {
+    pub context: Context,
+    pub response_channel: sync::oneshot::Sender<StatusResponse>,
+}
+
+#[derive(Debug, Message)]
+#[rtype(result = "()")]
+pub struct GetStatusResponseMessage {
+    pub context: Context,
+    pub status: bool,
+    pub response_channel: sync::oneshot::Sender<StatusResponse>,
+}
+
+#[derive(Debug, Message)]
+#[rtype(result = "()")]
+pub struct SimConnectPing;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
 pub enum RefreshRate {

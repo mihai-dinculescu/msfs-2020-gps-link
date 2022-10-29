@@ -8,14 +8,14 @@ file. This change log follows the conventions of
 
 ### Changed
 
-- Updated to SimConnect SDK v0.1.3.
-- The "Connected" status will now be reported much quicker (up to 15x times faster).
+- The "Connected" status will now be reported much quicker (up to 6x times faster).
 - Error handling and tracing have been improved.
 
 ### Fixed
 
-- Fixed an issue that was preventing the SimConnect SDK from closing on user "Disconnect".
-- Fixed an issue that was causing SimConnect SDK to unnecessarily connect a second time on user "Connect".
+- Fixed an issue that was causing the UI to occasionally think it's still connected after MSFS2020 has been closed.
+- Fixed an issue that was preventing the SimConnect Client from properly closing on user "Disconnect".
+- Fixed an issue that was causing SimConnect Client to unnecessarily connect a second time on user "Connect".
 
 ## [v0.2.4] - 2022-08-26
 

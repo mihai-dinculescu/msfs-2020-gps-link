@@ -5,10 +5,11 @@ use tokio::sync::mpsc::Receiver;
 use tracing::{debug, error, field, info, instrument, warn, Span};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 
+use crate::cmd::StatusResponse;
 use crate::system::{
     broadcaster_actor::BroadcasterActor,
     landing_detection_actor::LandingDetectionActor,
-    messages::{CoordinatorMessage, StopMessage},
+    messages::{CoordinatorMessage, GetStatusMessage, GetStatusResponseMessage, StopMessage},
     simconnect_actor::SimConnectActor,
 };
 
@@ -89,10 +90,10 @@ impl Handler<CoordinatorMessage> for CoordinatorActor {
 
     #[instrument(
         name = "CoordinatorActor::Handler<CoordinatorMessage>",
-        skip(self, message),
+        skip(self, message, ctx),
         fields(request_id = field::Empty)
     )]
-    fn handle(&mut self, message: CoordinatorMessage, _: &mut Context<Self>) -> Self::Result {
+    fn handle(&mut self, message: CoordinatorMessage, ctx: &mut Context<Self>) -> Self::Result {
         let span = Span::current();
 
         match message {
@@ -110,6 +111,8 @@ impl Handler<CoordinatorMessage> for CoordinatorActor {
                     reason: "Start".to_string(),
                 });
 
+                let coordinator_addr = ctx.address();
+
                 let broadcaster_addr =
                     BroadcasterActor::new(span.context(), broadcast_port, broadcast_netmask)
                         .start();
@@ -121,6 +124,7 @@ impl Handler<CoordinatorMessage> for CoordinatorActor {
                     refresh_rate,
                     // disabled for now as this functionality is not fully implemented
                     false,
+                    coordinator_addr,
                     broadcaster_addr.clone(),
                     landing_detection_addr.clone(),
                 )
@@ -139,37 +143,54 @@ impl Handler<CoordinatorMessage> for CoordinatorActor {
                     reason: "Stop".to_string(),
                 });
             }
-            CoordinatorMessage::Status {
+            CoordinatorMessage::Status(GetStatusMessage {
                 context,
                 response_channel,
-            } => {
+            }) => {
                 span.set_parent(context);
                 debug!("CoordinatorActor received Status");
 
-                let mut actors_alive = 0;
+                let mut successful_checks = 0u32;
 
                 if let Some(addr) = &self.broadcaster_addr {
                     if addr.connected() {
-                        actors_alive += 1;
+                        successful_checks += 1;
                     }
                 }
 
                 if let Some(addr) = &self.landing_detection_addr {
                     if addr.connected() {
-                        actors_alive += 1;
+                        successful_checks += 1;
                     }
                 }
 
                 if let Some(addr) = &self.simconnect_addr {
                     if addr.connected() {
-                        actors_alive += 1;
+                        successful_checks += 1;
                     }
                 }
 
-                let response = actors_alive == 3;
+                if successful_checks == 3 {
+                    // things might be OK but we must check if the SimConnect actor is connected
+                    self.simconnect_addr
+                        .as_ref()
+                        .expect("this should never happen")
+                        // it's fine not to check the result here
+                        // because the worst that can happen is that the get status command will timeout
+                        .do_send(GetStatusMessage {
+                            context: Span::current().context(),
+                            response_channel,
+                        });
+                } else {
+                    let coordinator_addr = ctx.address();
 
-                if let Err(e) = response_channel.send(response) {
-                    warn!(error = ?e, "failed to send through the mpsc channel");
+                    // it's fine not to check the result here
+                    // because the worst that can happen is that the get status command will timeout
+                    coordinator_addr.do_send(GetStatusResponseMessage {
+                        context: Span::current().context(),
+                        status: false,
+                        response_channel,
+                    });
                 }
             }
         }
@@ -188,26 +209,48 @@ impl CoordinatorActor {
 
         if let Some(addr) = &self.broadcaster_addr {
             if addr.connected() {
-                addr.try_send(message.clone())
-                    .expect("BroadcasterActor queue is full");
+                // it's fine not to check the result here
+                // because the actor in question will stop itself
+                addr.do_send(message.clone());
             }
             self.broadcaster_addr = None;
         }
 
         if let Some(addr) = &self.landing_detection_addr {
             if addr.connected() {
-                addr.try_send(message.clone())
-                    .expect("LandingDetectionActor queue is full");
+                // it's fine not to check the result here
+                // because the actor in question will stop itself
+                addr.do_send(message.clone());
             }
             self.landing_detection_addr = None;
         }
 
         if let Some(addr) = &self.simconnect_addr {
             if addr.connected() {
-                addr.try_send(message)
-                    .expect("SimConnectActor queue is full");
+                // it's fine not to check the result here
+                // because the actor in question will stop itself
+                addr.do_send(message);
             }
             self.simconnect_addr = None;
+        }
+    }
+}
+
+impl Handler<GetStatusResponseMessage> for CoordinatorActor {
+    type Result = ();
+
+    #[instrument(
+        name = "CoordinatorActor::handle::<GetStatusResponseMessage>",
+        skip(self, message)
+    )]
+    fn handle(&mut self, message: GetStatusResponseMessage, _: &mut Context<Self>) -> Self::Result {
+        Span::current().set_parent(message.context);
+
+        if let Err(e) = message.response_channel.send(StatusResponse {
+            context: Span::current().context(),
+            status: message.status,
+        }) {
+            warn!(error = ?e, "failed to send through the mpsc channel");
         }
     }
 }

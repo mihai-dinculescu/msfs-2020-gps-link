@@ -4,7 +4,7 @@ version = 3
 
 [[package]]
 name = "MSFS-2020-GPS-Link"
-version = "0.2.4"
+version = "0.2.5"
 dependencies = [
  "actix",
  "opentelemetry-jaeger",

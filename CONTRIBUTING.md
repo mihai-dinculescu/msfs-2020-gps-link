@@ -24,7 +24,7 @@ cargo tauri dev
 
 ## Releases
 
-- Update the version in `src-tauri/Cargo.toml`
+- Update the version in `Cargo.toml`
 - Update the version in `www/package.json`
 - Update CHANGELOG.md
 

@@ -1,6 +1,6 @@
 {
   "name": "msfs-2020-gps-link",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "private": true,
   "scripts": {
     "start": "yarn && react-app-rewired start",

@@ -6,6 +6,8 @@ file. This change log follows the conventions of
 
 ## [Unreleased]
 
+## [v0.2.5] - 2022-10-29
+
 ### Changed
 
 - The "Connected" status will now be reported much quicker (up to 6x times faster).
@@ -63,6 +65,7 @@ file. This change log follows the conventions of
 ### Initial Release of MSFS 2020 GPS Link
 
 [unreleased]: https://github.com/mihai-dinculescu/cargo-wipe
+[v0.2.5]: https://github.com/mihai-dinculescu/cargo-wipe/tree/v0.2.5
 [v0.2.4]: https://github.com/mihai-dinculescu/cargo-wipe/tree/v0.2.4
 [v0.2.3]: https://github.com/mihai-dinculescu/cargo-wipe/tree/v0.2.3
 [v0.2.2]: https://github.com/mihai-dinculescu/cargo-wipe/tree/v0.2.2

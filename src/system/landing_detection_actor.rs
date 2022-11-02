@@ -44,7 +44,7 @@ impl Handler<SimConnectDataMessage<OnGround>> for LandingDetectionActor {
     type Result = ();
 
     #[instrument(
-        name = "LandingDetectionActor::handle::<OnGroundMessage>",
+        name = "LandingDetectionActor::handle::<SimConnectDataMessage<OnGround>>",
         skip(self, message)
     )]
     fn handle(
@@ -83,7 +83,7 @@ impl Handler<SimConnectDataMessage<GpsData>> for LandingDetectionActor {
     type Result = ();
 
     #[instrument(
-        name = "LandingDetectionActor::handle::<GpsDataMessage>",
+        name = "LandingDetectionActor::handle::<SimConnectDataMessage<GpsData>>",
         skip(self, message)
     )]
     fn handle(
@@ -100,7 +100,7 @@ impl Handler<SimConnectDataMessage<Vec<Airport>>> for LandingDetectionActor {
     type Result = ();
 
     #[instrument(
-        name = "LandingDetectionActor::handle::<AirportListMessage>",
+        name = "LandingDetectionActor::handle::<SimConnectDataMessage<Vec<Airport>>",
         skip(self, message)
     )]
     fn handle(

@@ -3,12 +3,14 @@ use simconnect_sdk::SimConnectObject;
 #[derive(Debug, Clone, SimConnectObject)]
 #[simconnect(period = "second")]
 pub struct GpsData {
-    #[simconnect(name = "PLANE LATITUDE", unit = "degrees")]
+    #[simconnect(name = "PLANE LATITUDE", unit = "Degrees")]
     pub lat: f64,
-    #[simconnect(name = "PLANE LONGITUDE", unit = "degrees")]
+    #[simconnect(name = "PLANE LONGITUDE", unit = "Degrees")]
     pub lon: f64,
-    #[simconnect(name = "PLANE ALTITUDE", unit = "meters")]
+    #[simconnect(name = "PLANE ALTITUDE", unit = "Meters")]
     pub alt: f64,
+    #[simconnect(name = "PRESSURE ALTITUDE", unit = "Meters")]
+    pub pressure_altitude: f64,
     #[simconnect(name = "GPS GROUND MAGNETIC TRACK", unit = "Degrees")]
     pub gps_ground_magnetic_track: f64,
     #[simconnect(name = "MAGVAR", unit = "Degrees")]

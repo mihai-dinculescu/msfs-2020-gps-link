@@ -1,32 +1,25 @@
-use std::net::UdpSocket;
-
 use actix::{Actor, ActorContext, AsyncContext, Context, Handler};
 use opentelemetry_api::Context as OpenTelemetryContext;
-use tracing::{debug, error, info, instrument, Span};
+use tracing::{debug, info, instrument, warn, Span};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 
+use crate::broadcaster::{BroadcasterConfig, BroadcasterExt, Com, Udp};
 use crate::system::messages::{SimConnectDataMessage, StopMessage};
 use crate::system::simconnect_objects::GpsData;
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct BroadcasterActor {
     context: OpenTelemetryContext,
-    broadcast_port: u16,
-    broadcast_netmask: String,
-    socket: Option<UdpSocket>,
+    config: BroadcasterConfig,
+    broadcaster: Option<Box<dyn BroadcasterExt>>,
 }
 
 impl BroadcasterActor {
-    pub fn new(
-        context: OpenTelemetryContext,
-        broadcast_port: u16,
-        broadcast_netmask: String,
-    ) -> Self {
+    pub fn new(context: OpenTelemetryContext, config: BroadcasterConfig) -> Self {
         Self {
             context,
-            broadcast_port,
-            broadcast_netmask,
-            ..Default::default()
+            config,
+            broadcaster: None,
         }
     }
 }
@@ -39,35 +32,25 @@ impl Actor for BroadcasterActor {
         Span::current().set_parent(self.context.clone());
 
         let addr = ctx.address();
-        let local_port = self.broadcast_port - 1;
-        let broadcast_netmask = self.broadcast_netmask.clone();
 
-        let socket = match UdpSocket::bind(format!("{}:{}", "0.0.0.0", local_port)) {
-            Ok(s) => s,
-            Err(e) => panic!("couldn't bind socket: {}", e),
+        let broadcaster = match self.config.clone() {
+            BroadcasterConfig::Udp(config) => Udp::new(config),
+            BroadcasterConfig::Com(config) => Com::new(config),
         };
 
-        if let Err(e) = socket.set_broadcast(true) {
-            error!(error = ?e, "failed to set UDP broadcast");
-            addr.try_send(StopMessage {
-                context: Span::current().context(),
-                reason: "failed to set UDP broadcast".to_string(),
-            })
-            .expect("BroadcasterActor queue is full");
+        match broadcaster {
+            Ok(socket) => {
+                self.broadcaster = Some(socket);
+                info!("BroadcasterActor started");
+            }
+            Err(_) => {
+                addr.try_send(StopMessage {
+                    context: Span::current().context(),
+                    reason: "failed to configure broadcaster".to_string(),
+                })
+                .expect("BroadcasterActor queue is full");
+            }
         }
-
-        if let Err(e) = socket.connect((broadcast_netmask, local_port)) {
-            error!(error = ?e, "failed to connect UDP");
-            addr.try_send(StopMessage {
-                context: Span::current().context(),
-                reason: "failed to connect UDP".to_string(),
-            })
-            .expect("BroadcasterActor queue is full");
-        }
-
-        self.socket = Some(socket);
-
-        info!("BroadcasterActor started");
     }
 
     #[instrument(name = "BroadcasterActor::stopped", skip(self))]
@@ -81,7 +64,7 @@ impl Handler<SimConnectDataMessage<GpsData>> for BroadcasterActor {
     type Result = ();
 
     #[instrument(
-        name = "BroadcasterActor::handle::<GpsDataMessage>",
+        name = "BroadcasterActor::handle::<SimConnectDataMessage<GpsData>>",
         skip(self, message, ctx)
     )]
     fn handle(
@@ -92,31 +75,21 @@ impl Handler<SimConnectDataMessage<GpsData>> for BroadcasterActor {
         Span::current().set_parent(message.context);
         let data = message.data;
 
-        if let Some(socket) = &self.socket {
-            debug!("Broadcasting GpsDataMessage message");
+        if let Some(broadcaster) = self.broadcaster.as_mut() {
+            debug!("Broadcasting SimConnectDataMessage<GpsData> message");
 
-            let track = data.gps_ground_magnetic_track - data.gps_magnetic_variation;
+            let result = broadcaster.send(data);
 
-            let result = socket.send_to(
-                format!(
-                    "XGPSMSFS,{},{},{},{},{}",
-                    data.lon, data.lat, data.alt, track, data.gps_ground_speed
-                )
-                .as_bytes(),
-                format!("{}:{}", &self.broadcast_netmask, self.broadcast_port),
-            );
-
-            if let Err(e) = result {
-                error!(error = ?e, "failed to send broadcast over UDP");
+            if result.is_err() {
                 let addr = ctx.address();
                 addr.try_send(StopMessage {
                     context: Span::current().context(),
-                    reason: "failed to send broadcast over UDP".to_string(),
+                    reason: "failed to send broadcast".to_string(),
                 })
                 .expect("BroadcasterActor queue is full");
             }
         } else {
-            debug!("UDP socket is not yet open");
+            warn!("failed to get the current broadcaster");
         }
     }
 }

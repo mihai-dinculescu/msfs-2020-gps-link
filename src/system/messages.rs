@@ -3,7 +3,7 @@ use opentelemetry_api::Context;
 use serde::Deserialize;
 use tokio::sync;
 
-use crate::cmd::StatusResponse;
+use crate::{broadcaster::BroadcasterConfig, cmd::StatusResponse};
 
 #[derive(Debug, Clone, Message)]
 #[rtype(result = "()")]
@@ -18,8 +18,7 @@ pub enum CoordinatorMessage {
     Start {
         context: Context,
         refresh_rate: RefreshRate,
-        broadcast_netmask: String,
-        broadcast_port: u16,
+        config: BroadcasterConfig,
     },
     Stop {
         context: Context,

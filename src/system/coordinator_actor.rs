@@ -100,8 +100,7 @@ impl Handler<CoordinatorMessage> for CoordinatorActor {
             CoordinatorMessage::Start {
                 context,
                 refresh_rate,
-                broadcast_netmask,
-                broadcast_port,
+                config,
             } => {
                 span.set_parent(context);
                 debug!("CoordinatorActor received Start");
@@ -113,9 +112,7 @@ impl Handler<CoordinatorMessage> for CoordinatorActor {
 
                 let coordinator_addr = ctx.address();
 
-                let broadcaster_addr =
-                    BroadcasterActor::new(span.context(), broadcast_port, broadcast_netmask)
-                        .start();
+                let broadcaster_addr = BroadcasterActor::new(span.context(), config).start();
 
                 let landing_detection_addr = LandingDetectionActor::new(span.context()).start();
 

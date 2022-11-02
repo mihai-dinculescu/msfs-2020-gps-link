@@ -5,7 +5,10 @@ use tokio::sync::{self, mpsc::Sender, oneshot::error::TryRecvError};
 use tracing::{error, info, info_span, instrument, Span};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 
-use crate::system::messages::{CoordinatorMessage, GetStatusMessage, RefreshRate};
+use crate::{
+    broadcaster::BroadcasterConfig,
+    system::messages::{CoordinatorMessage, GetStatusMessage, RefreshRate},
+};
 
 pub struct AppState {
     pub tx: Sender<CoordinatorMessage>,
@@ -15,8 +18,7 @@ pub struct AppState {
 #[serde(rename_all = "camelCase")]
 pub struct StartOptions {
     pub refresh_rate: RefreshRate,
-    pub broadcast_netmask: String,
-    pub broadcast_port: u16,
+    pub config: BroadcasterConfig,
 }
 
 #[derive(Serialize)]
@@ -88,8 +90,7 @@ pub async fn cmd_start(
         .send(CoordinatorMessage::Start {
             context: Span::current().context(),
             refresh_rate: options.refresh_rate,
-            broadcast_netmask: options.broadcast_netmask,
-            broadcast_port: options.broadcast_port,
+            config: options.config,
         })
         .await;
 

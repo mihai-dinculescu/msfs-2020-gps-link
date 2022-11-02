@@ -42,9 +42,17 @@ export const ConnectForm: React.FC<ConnectFormProps> = (props: ConnectFormProps)
         invoke('cmd_start', {
             requestId: uuidv4(),
             options: {
-                broadcastNetmask,
-                broadcastPort,
                 refreshRate,
+                // config: {
+                //     type: 'udp',
+                //     port: broadcastPort,
+                //     netmask: broadcastNetmask,
+                // },
+                config: {
+                    type: 'com',
+                    port: 'COM2',
+                    baud_rate: 9600,
+                },
             },
         }).catch((error) => {
             console.error('Start', error);

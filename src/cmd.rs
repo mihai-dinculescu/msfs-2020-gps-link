@@ -1,8 +1,10 @@
 use opentelemetry_api::Context;
 use serde::{Deserialize, Serialize};
-use std::{thread, time};
+use std::{fmt, time};
+use tokio::sync::oneshot::Receiver;
 use tokio::sync::{self, mpsc::Sender, oneshot::error::TryRecvError};
-use tracing::{error, info, info_span, instrument, Span};
+use tokio::time::sleep;
+use tracing::{debug, error, info, info_span, instrument, warn, Instrument, Span};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 
 use crate::{
@@ -21,9 +23,12 @@ pub struct StartOptions {
     pub config: BroadcasterConfig,
 }
 
-#[derive(Serialize)]
-pub struct Response<'a> {
-    message: &'a str,
+#[derive(Debug, Serialize)]
+pub struct CommandResponse<T>
+where
+    T: fmt::Debug + Serialize,
+{
+    data: T,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -46,10 +51,16 @@ impl std::fmt::Display for CommandError {
 impl std::error::Error for CommandError {}
 
 #[derive(Debug)]
-pub struct StatusResponse {
+pub struct ChannelResponse<T>
+where
+    T: fmt::Debug,
+{
     pub context: Context,
-    pub status: bool,
+    pub data: T,
 }
+
+const RESPONSE_CHANNEL_RETRIES: u64 = 10;
+const RESPONSE_CHANNEL_RETRY_DELAY_MS: time::Duration = time::Duration::from_millis(100);
 
 // The commands definitions
 // Deserialized from JS
@@ -77,13 +88,41 @@ pub enum Cmd {
     },
 }
 
+#[instrument(name = "cmd::cmd_get_available_com_ports", skip(state))]
+#[tauri::command]
+pub async fn cmd_get_available_com_ports(
+    request_id: String,
+    state: tauri::State<'_, AppState>,
+) -> Result<CommandResponse<Vec<String>>, CommandError> {
+    let tx_local = state.tx.clone();
+    let (response_tx, response_rx) = sync::oneshot::channel::<ChannelResponse<Vec<String>>>();
+    let result = tx_local
+        .send(CoordinatorMessage::GetAvailableComPorts {
+            context: Span::current().context(),
+            response_channel: response_tx,
+        })
+        .await;
+
+    match result {
+        Ok(_) => {
+            poll_channel_response(response_rx)
+                .instrument(info_span!("cmd::cmd_get_available_com_ports::recv"))
+                .await
+        }
+        Err(e) => {
+            error!(error = ?e, "the mpsc channel has closed");
+            Err(CommandError::new("ERROR".to_string()))
+        }
+    }
+}
+
 #[instrument(name = "cmd::cmd_start", skip(state))]
 #[tauri::command]
 pub async fn cmd_start(
     request_id: String,
     options: StartOptions,
     state: tauri::State<'_, AppState>,
-) -> Result<Response<'_>, CommandError> {
+) -> Result<CommandResponse<bool>, CommandError> {
     let tx_local = state.tx.clone();
 
     let result = tx_local
@@ -96,10 +135,9 @@ pub async fn cmd_start(
 
     match result {
         Ok(_) => {
-            let message = "OK";
-
-            info!(response = ?message);
-            Ok(Response { message })
+            let response = CommandResponse { data: true };
+            info!(response = ?response, "Returning");
+            Ok(response)
         }
         Err(e) => {
             error!(error = ?e, "the mpsc channel has closed");
@@ -113,7 +151,7 @@ pub async fn cmd_start(
 pub async fn cmd_stop(
     request_id: String,
     state: tauri::State<'_, AppState>,
-) -> Result<Response<'_>, CommandError> {
+) -> Result<CommandResponse<bool>, CommandError> {
     let tx_local = state.tx.clone();
     let result = tx_local
         .send(CoordinatorMessage::Stop {
@@ -123,10 +161,9 @@ pub async fn cmd_stop(
 
     match result {
         Ok(_) => {
-            let message = "OK";
-
-            info!(response = ?message);
-            Ok(Response { message })
+            let response = CommandResponse { data: true };
+            info!(response = ?response, "Returning");
+            Ok(response)
         }
         Err(e) => {
             error!(error = ?e, "the mpsc channel has closed");
@@ -140,9 +177,9 @@ pub async fn cmd_stop(
 pub async fn cmd_get_status(
     request_id: String,
     state: tauri::State<'_, AppState>,
-) -> Result<Response<'_>, CommandError> {
+) -> Result<CommandResponse<bool>, CommandError> {
     let tx_local = state.tx.clone();
-    let (response_tx, mut response_rx) = sync::oneshot::channel::<StatusResponse>();
+    let (response_tx, response_rx) = sync::oneshot::channel::<ChannelResponse<bool>>();
     let result = tx_local
         .send(CoordinatorMessage::Status(GetStatusMessage {
             context: Span::current().context(),
@@ -152,45 +189,51 @@ pub async fn cmd_get_status(
 
     match result {
         Ok(_) => {
-            let mut counter = 0;
-
-            loop {
-                let response = response_rx.try_recv();
-
-                match response {
-                    Ok(value) => {
-                        let message = match value.status {
-                            true => "CONNECTED",
-                            false => "NOT_CONNECTED",
-                        };
-
-                        let span = info_span!("cmd::cmd_get_status::recv");
-                        span.set_parent(value.context);
-                        span.in_scope(|| {
-                            info!(response = ?message, "Returning");
-                        });
-
-                        return Ok(Response { message });
-                    }
-                    Err(TryRecvError::Empty) => {
-                        counter += 1;
-
-                        if counter >= 10 {
-                            break;
-                        } else {
-                            thread::sleep(time::Duration::from_millis(100));
-                        }
-                    }
-                    Err(TryRecvError::Closed) => {
-                        return Err(CommandError::new("ERROR".to_string()))
-                    }
-                };
-            }
-            Err(CommandError::new("Timeout".to_string()))
+            poll_channel_response(response_rx)
+                .instrument(info_span!("cmd::cmd_get_status::recv"))
+                .await
         }
         Err(e) => {
             error!(error = ?e, "the mpsc channel has closed");
-            Err(CommandError::new("the mpsc channel has closed".to_string()))
+            Err(CommandError::new("ERROR".to_string()))
         }
     }
+}
+
+#[instrument(name = "cmd::poll_channel_response", skip(rx))]
+async fn poll_channel_response<T>(
+    mut rx: Receiver<ChannelResponse<T>>,
+) -> Result<CommandResponse<T>, CommandError>
+where
+    T: fmt::Debug + Serialize,
+{
+    let mut counter = 0;
+
+    loop {
+        let response = rx.try_recv();
+
+        match response {
+            Ok(value) => {
+                let response = CommandResponse { data: value.data };
+                debug!(response = ?response, "Returning");
+                return Ok(response);
+            }
+            Err(TryRecvError::Empty) => {
+                counter += 1;
+
+                if counter >= RESPONSE_CHANNEL_RETRIES {
+                    break;
+                } else {
+                    sleep(RESPONSE_CHANNEL_RETRY_DELAY_MS).await;
+                }
+            }
+            Err(TryRecvError::Closed) => {
+                error!("the onehost channel has closed");
+                return Err(CommandError::new("ERROR".to_string()));
+            }
+        };
+    }
+
+    warn!("failed to get a response from the oneshot channel in due time");
+    Err(CommandError::new("TIMEOUT".to_string()))
 }

@@ -38,6 +38,18 @@ export const ConnectForm: React.FC<ConnectFormProps> = (props: ConnectFormProps)
         isConnected: false,
     });
 
+    const getAvailableComPorts = React.useCallback(() => {
+        invoke('cmd_get_available_com_ports', {
+            requestId: uuidv4(),
+        })
+            .then((response) => {
+                console.log(response);
+            })
+            .catch((error) => {
+                console.error('Start', error);
+            });
+    }, []);
+
     const connect = React.useCallback(() => {
         invoke('cmd_start', {
             requestId: uuidv4(),
@@ -65,20 +77,22 @@ export const ConnectForm: React.FC<ConnectFormProps> = (props: ConnectFormProps)
                 requestId: uuidv4(),
             })
                 .then((response) => {
-                    const { message } = response as { message: string };
+                    const { data } = response as { data: boolean };
 
-                    if (message !== 'ERROR') {
-                        setConnectionStatus((prevState) => ({
-                            ...prevState,
-                            isConnected: message === 'CONNECTED',
-                        }));
-                    }
+                    setConnectionStatus((prevState) => ({
+                        ...prevState,
+                        isConnected: data,
+                    }));
                 })
                 .catch((error) => {
                     console.error('Status', error);
                 });
         }
     }, [connectionStatus.isConnecting, connectionStatus.isConnected]);
+
+    React.useEffect(() => {
+        getAvailableComPorts();
+    }, []);
 
     React.useEffect(() => {
         if (connectionStatus.isConnecting && !connectionStatus.isConnected) {
@@ -131,14 +145,9 @@ export const ConnectForm: React.FC<ConnectFormProps> = (props: ConnectFormProps)
 
         invoke('cmd_stop', {
             requestId: uuidv4(),
-        })
-            .then((response) => {
-                const { message } = response as { message: string };
-                console.log(message);
-            })
-            .catch((error) => {
-                console.error(error);
-            });
+        }).catch((error) => {
+            console.error('Stop', error);
+        });
     };
 
     const isDisabled = connectionStatus.isConnecting || connectionStatus.isConnected;

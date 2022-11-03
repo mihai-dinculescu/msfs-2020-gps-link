@@ -5,7 +5,7 @@ use tokio::sync::mpsc::Receiver;
 use tracing::{debug, error, field, info, instrument, warn, Span};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 
-use crate::cmd::StatusResponse;
+use crate::cmd::ChannelResponse;
 use crate::system::{
     broadcaster_actor::BroadcasterActor,
     landing_detection_actor::LandingDetectionActor,
@@ -97,6 +97,35 @@ impl Handler<CoordinatorMessage> for CoordinatorActor {
         let span = Span::current();
 
         match message {
+            CoordinatorMessage::GetAvailableComPorts {
+                context,
+                response_channel,
+            } => {
+                span.set_parent(context);
+                debug!("CoordinatorActor received GetAvailableComPorts");
+
+                let ports = serialport::available_ports();
+
+                let data = match ports {
+                    Ok(ports) => ports
+                        .into_iter()
+                        .map(|port| port.port_name)
+                        .collect::<Vec<String>>(),
+                    Err(e) => {
+                        error!(error = ?e, "failed to read available COM ports");
+                        Vec::new()
+                    }
+                };
+
+                let response = ChannelResponse {
+                    context: Span::current().context(),
+                    data,
+                };
+
+                if let Err(e) = response_channel.send(response) {
+                    error!(error = ?e, "failed to send through the oneshot channel");
+                }
+            }
             CoordinatorMessage::Start {
                 context,
                 refresh_rate,
@@ -243,11 +272,11 @@ impl Handler<GetStatusResponseMessage> for CoordinatorActor {
     fn handle(&mut self, message: GetStatusResponseMessage, _: &mut Context<Self>) -> Self::Result {
         Span::current().set_parent(message.context);
 
-        if let Err(e) = message.response_channel.send(StatusResponse {
+        if let Err(e) = message.response_channel.send(ChannelResponse {
             context: Span::current().context(),
-            status: message.status,
+            data: message.status,
         }) {
-            warn!(error = ?e, "failed to send through the mpsc channel");
+            warn!(error = ?e, "failed to send through the oneshot channel");
         }
     }
 }

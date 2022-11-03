@@ -3,7 +3,7 @@ use opentelemetry_api::Context;
 use serde::Deserialize;
 use tokio::sync;
 
-use crate::{broadcaster::BroadcasterConfig, cmd::StatusResponse};
+use crate::{broadcaster::BroadcasterConfig, cmd::ChannelResponse};
 
 #[derive(Debug, Clone, Message)]
 #[rtype(result = "()")]
@@ -15,6 +15,10 @@ pub struct SimConnectDataMessage<T> {
 #[derive(Debug, Message)]
 #[rtype(result = "()")]
 pub enum CoordinatorMessage {
+    GetAvailableComPorts {
+        context: Context,
+        response_channel: sync::oneshot::Sender<ChannelResponse<Vec<String>>>,
+    },
     Start {
         context: Context,
         refresh_rate: RefreshRate,
@@ -30,7 +34,7 @@ pub enum CoordinatorMessage {
 #[rtype(result = "()")]
 pub struct GetStatusMessage {
     pub context: Context,
-    pub response_channel: sync::oneshot::Sender<StatusResponse>,
+    pub response_channel: sync::oneshot::Sender<ChannelResponse<bool>>,
 }
 
 #[derive(Debug, Message)]
@@ -38,7 +42,7 @@ pub struct GetStatusMessage {
 pub struct GetStatusResponseMessage {
     pub context: Context,
     pub status: bool,
-    pub response_channel: sync::oneshot::Sender<StatusResponse>,
+    pub response_channel: sync::oneshot::Sender<ChannelResponse<bool>>,
 }
 
 #[derive(Debug, Message)]

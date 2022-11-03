@@ -17,7 +17,7 @@ mod broadcaster;
 mod cmd;
 mod system;
 
-use cmd::{cmd_get_status, cmd_start, cmd_stop, AppState};
+use cmd::{cmd_get_available_com_ports, cmd_get_status, cmd_start, cmd_stop, AppState};
 use system::{coordinator_actor::CoordinatorActor, messages::CoordinatorMessage};
 
 #[actix::main]
@@ -44,6 +44,7 @@ fn setup_app() {
     tauri::Builder::default()
         .manage(AppState { tx })
         .invoke_handler(tauri::generate_handler![
+            cmd_get_available_com_ports,
             cmd_start,
             cmd_stop,
             cmd_get_status

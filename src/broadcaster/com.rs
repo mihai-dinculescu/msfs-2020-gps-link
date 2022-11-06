@@ -127,8 +127,6 @@ impl Com {
     }
 
     fn convert_gps_data_to_nmea_mid_rmc(date: &DateTime<Utc>, data: &GpsData) -> String {
-        let track = data.gps_ground_magnetic_track - data.gps_magnetic_variation;
-
         let lat = data.lat.abs();
         let lat_deg = lat.trunc();
         let lat_min = lat.fract() * 60.0;
@@ -139,8 +137,15 @@ impl Com {
         let lon_min = lon.fract() * 60.0;
         let lon_dir = if data.lon >= 0.0 { "E" } else { "W" };
 
+        let magnetic_variation_dir = if data.gps_magnetic_variation >= 0.0 {
+            "E"
+        } else {
+            "W"
+        };
+        let magnetic_variation = data.gps_magnetic_variation.abs();
+
         let message = format!(
-            "$GPRMC,{},A,{:0>2}{:0>7.4},{},{:0>3}{:0>7.4},{},{:.1},{:.1},{},,,S",
+            "$GPRMC,{},A,{:0>2}{:0>7.4},{},{:0>3}{:0>7.4},{},{:.2},{:.2},{},{:.1},{},S",
             date.format("%H%M%S%.3f"),
             lat_deg,
             lat_min,
@@ -149,8 +154,10 @@ impl Com {
             lon_min,
             lon_dir,
             data.gps_ground_speed,
-            track,
-            date.format("%d%m%y")
+            data.gps_ground_magnetic_track,
+            date.format("%d%m%y"),
+            magnetic_variation,
+            magnetic_variation_dir,
         );
 
         let checksum = message.chars().skip(1).fold(0u8, |acc, c| acc ^ c as u8);
@@ -227,7 +234,7 @@ mod tests {
 
         assert_eq!(
             result,
-            "$GPRMC,211030.750,A,5130.5919,N,00007.0855,W,100.5,305.6,301022,,,S*67\r\n"
+            "$GPRMC,211030.750,A,5130.5919,N,00007.0855,W,100.50,310.55,301022,5.0,E,S*B\r\n"
         );
     }
 
@@ -249,7 +256,7 @@ mod tests {
 
         assert_eq!(
             result,
-            "$GPRMC,020103.075,A,0000.0245,N,00000.8385,E,0.0,97.1,030122,,,S*46\r\n"
+            "$GPRMC,020103.075,A,0000.0245,N,00000.8385,E,0.00,92.72,030122,4.4,W,S*3E\r\n"
         );
     }
 }

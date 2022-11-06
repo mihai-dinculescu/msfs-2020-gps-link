@@ -50,6 +50,7 @@ pub struct GetStatusResponseMessage {
 pub struct SimConnectPing;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub enum RefreshRate {
     Slow,
     Fast,

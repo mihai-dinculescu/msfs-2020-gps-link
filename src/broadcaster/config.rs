@@ -9,12 +9,14 @@ pub enum BroadcasterConfig {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct UdpConfig {
     pub port: u16,
     pub netmask: String,
 }
 
 #[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ComConfig {
     pub port: String,
     pub baud_rate: u32,

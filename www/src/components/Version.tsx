@@ -1,4 +1,4 @@
-import { Alert } from '@material-ui/lab';
+import { Alert } from '@mui/material';
 import React from 'react';
 
 const PACKAGE_VERSION = process.env.REACT_APP_VERSION;

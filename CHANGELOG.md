@@ -6,10 +6,15 @@ file. This change log follows the conventions of
 
 ## [Unreleased]
 
+## [v0.3.0-alpha.2] - 2022-11-06
+
 ### Changed
 
-- The **Course Over Ground** and **Magnetic Variation** should now be sent correctly over COM.
 - The **Baud rate** field is now a dropdown with a fixed set of options.
+
+### Fixed
+
+- The values for **Course Over Ground** and **Magnetic Variation** sent over COM should now be correct.
 
 ## [v0.3.0-alpha.1] - 2022-11-06
 
@@ -80,6 +85,7 @@ file. This change log follows the conventions of
 ### Initial Release of MSFS 2020 GPS Link
 
 [unreleased]: https://github.com/mihai-dinculescu/msfs-2020-gps-link
+[v0.3.0-alpha.2]: https://github.com/mihai-dinculescu/msfs-2020-gps-link/tree/v0.3.0-alpha.2
 [v0.3.0-alpha.1]: https://github.com/mihai-dinculescu/msfs-2020-gps-link/tree/v0.3.0-alpha.1
 [v0.2.5]: https://github.com/mihai-dinculescu/msfs-2020-gps-link/tree/v0.2.5
 [v0.2.4]: https://github.com/mihai-dinculescu/msfs-2020-gps-link/tree/v0.2.4

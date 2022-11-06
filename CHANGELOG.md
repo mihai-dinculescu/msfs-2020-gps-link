@@ -8,6 +8,7 @@ file. This change log follows the conventions of
 
 ### Changed
 
+- The **Course Over Ground** and **Magnetic Variation** should now be sent correctly over COM.
 - The **Baud rate** field is now a dropdown with a fixed set of options.
 
 ## [v0.3.0-alpha.1] - 2022-11-06

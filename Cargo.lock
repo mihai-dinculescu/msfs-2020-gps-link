@@ -25,7 +25,7 @@ dependencies = [
 
 [[package]]
 name = "MSFS-2020-GPS-Link"
-version = "0.2.5"
+version = "0.3.0"
 dependencies = [
  "actix",
  "chrono",

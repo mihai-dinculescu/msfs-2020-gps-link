@@ -22,6 +22,8 @@ import { invoke } from '@tauri-apps/api/tauri';
 import { IPAddressTextMask } from './IPAddressTextMask';
 import { ContactFormContext } from './ConnectForm';
 
+const availableBaudRates = [4800, 9600, 14400, 19200, 38400, 57600];
+
 export const ConnectFormBroadcast: React.FC = () => {
     const [availableComPorts, setAvailableComPorts] = useState<string[]>([]);
 
@@ -91,7 +93,7 @@ export const ConnectFormBroadcast: React.FC = () => {
     );
 
     const comBaudRateOnChange = useCallback(
-        (event: React.ChangeEvent<HTMLInputElement>) => {
+        (event: SelectChangeEvent<string>) => {
             setComBaudRate(parseInt(event.target.value, 10));
         },
         [setComBaudRate],
@@ -111,6 +113,7 @@ export const ConnectFormBroadcast: React.FC = () => {
                                 inputComponent={IPAddressTextMask}
                                 value={udpNetmask}
                                 onChange={udpNetmaskOnChange}
+                                sx={{ width: 160 }}
                             />
                             <Tooltip
                                 title={
@@ -143,13 +146,10 @@ export const ConnectFormBroadcast: React.FC = () => {
                                 min: 0,
                                 max: 65536,
                             }}
-                            InputLabelProps={{
-                                shrink: true,
-                            }}
                             value={udpPort}
                             onChange={udpPortOnChange}
                             variant="standard"
-                            sx={{ minWidth: 120 }}
+                            sx={{ width: 160 }}
                         />
                     </FormControl>
                 </Stack>
@@ -162,10 +162,12 @@ export const ConnectFormBroadcast: React.FC = () => {
                         <Stack spacing={1} direction="row">
                             <Select
                                 disabled={isDisabled}
+                                name="comPort"
+                                id="comPort"
                                 value={comPort}
                                 onChange={comPortOnChange}
                                 variant="standard"
-                                sx={{ minWidth: 182 }}
+                                sx={{ width: 160 }}
                             >
                                 {availableComPorts.map((port) => {
                                     return <MenuItem value={port}>{port}</MenuItem>;
@@ -197,23 +199,19 @@ export const ConnectFormBroadcast: React.FC = () => {
                     </FormControl>
                     <FormControl component="fieldset">
                         <FormLabel component="legend">Baud rate</FormLabel>
-                        <TextField
+                        <Select
                             disabled={isDisabled}
                             name="comBaudRate"
                             id="comBaudRate"
-                            type="number"
-                            inputProps={{
-                                min: 110,
-                                max: 115200,
-                            }}
-                            InputLabelProps={{
-                                shrink: true,
-                            }}
-                            value={comBaudRate}
+                            value={comBaudRate.toString()}
                             onChange={comBaudRateOnChange}
                             variant="standard"
-                            sx={{ minWidth: 120 }}
-                        />
+                            sx={{ width: 160 }}
+                        >
+                            {availableBaudRates.map((baudRate) => {
+                                return <MenuItem value={baudRate}>{baudRate}</MenuItem>;
+                            })}
+                        </Select>
                     </FormControl>
                 </Stack>
             );

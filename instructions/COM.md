@@ -8,5 +8,18 @@ If the pair created is **COM3 & COM4**, you can instruct MSFS 2020 GPS Link to b
 
 ## Tools that can create a pair of virtual COM ports
 
-- [Null-modem emulator (com0com)](https://sourceforge.net/projects/com0com/)\
-When installing, make sure to select the **COM# <-> COM#** component. This will create one pair of virtual COM ports for you to use. There should be nothing else to do after the installation completes.
+### [Null-modem emulator (com0com)](https://sourceforge.net/projects/com0com/)\
+
+This setup will persist across multiple sessions and reboots, so you only need to do it once.
+
+1. On the **Choose Components** page, check the **COM# <-> COM#** component.
+2. On the **Completing the Null-modem Emulator Driver Setup Wizard** page, check **Launch Setup** and then click **Finish**.
+3. Depending on the presence of .NET Framework 2.0 on your PC, you will either get a console window or a UI next.
+    * if you get the console window, type
+
+        ```bash
+        change CNCA0 EmuOverrun=yes
+        change CNCB0 EmuOverrun=yes
+        ```
+
+    * if you get the UI, check **enable buffer overrun** next to each port in the pair and then click **Apply**.

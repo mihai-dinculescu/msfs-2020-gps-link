@@ -9,6 +9,18 @@ Tested with [SkyDemon][sky_demon_url] and [Garmin Pilot][garmin_pilot_url].
 
 ## [Quick Download][latest_release]
 
+## Tested on
+
+| App                    | Platform | UDP     | COM     |
+| ---------------------- | -------- | ------- | ------- |
+| Garmin Pilot           | Android  | &check; | -       |
+| Jeppesen FliteDeck Pro | PC       | -       | &check; |
+| SkyDemon               | Android  | &check; | -       |
+| SkyDemon               | PC       | &check; | &check; |
+| ForeFlight             | iOS      | ? \*    | -       |
+
+\* Feedback from the ones with the ability to test will be greatly appreciated.
+
 ## Usage
 
 - download the latest version from the [Releases][releases_url] page or by using the link above

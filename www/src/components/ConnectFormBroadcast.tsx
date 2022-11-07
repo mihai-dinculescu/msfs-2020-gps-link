@@ -22,7 +22,7 @@ import { invoke } from '@tauri-apps/api/tauri';
 import { IPAddressTextMask } from './IPAddressTextMask';
 import { ContactFormContext } from './ConnectForm';
 
-const availableBaudRates = [4800, 9600, 14400, 19200, 38400, 57600];
+const availableBaudRates = [4800, 9600, 19200, 38400, 57600, 115200];
 
 export const ConnectFormBroadcast: React.FC = () => {
     const [availableComPorts, setAvailableComPorts] = useState<string[]>([]);

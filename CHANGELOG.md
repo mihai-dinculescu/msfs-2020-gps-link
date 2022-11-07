@@ -6,6 +6,16 @@ file. This change log follows the conventions of
 
 ## [Unreleased]
 
+## [v0.3.0] - 2022-11-07
+
+### Added
+
+- The option to broadcast to a virtual COM port, emulating an RS232 GPS device, has been added.
+
+### Changed
+
+- When a new release is available, the notification now includes its version number.
+
 ## [v0.3.0-alpha.2] - 2022-11-06
 
 ### Changed
@@ -85,6 +95,7 @@ file. This change log follows the conventions of
 ### Initial Release of MSFS 2020 GPS Link
 
 [unreleased]: https://github.com/mihai-dinculescu/msfs-2020-gps-link
+[v0.3.0]: https://github.com/mihai-dinculescu/msfs-2020-gps-link/tree/v0.3.0
 [v0.3.0-alpha.2]: https://github.com/mihai-dinculescu/msfs-2020-gps-link/tree/v0.3.0-alpha.2
 [v0.3.0-alpha.1]: https://github.com/mihai-dinculescu/msfs-2020-gps-link/tree/v0.3.0-alpha.1
 [v0.2.5]: https://github.com/mihai-dinculescu/msfs-2020-gps-link/tree/v0.2.5

@@ -228,7 +228,7 @@ where
                 }
             }
             Err(TryRecvError::Closed) => {
-                error!("the onehost channel has closed");
+                error!("the oneshot channel has closed");
                 return Err(CommandError::new("ERROR".to_string()));
             }
         };

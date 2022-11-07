@@ -182,7 +182,7 @@ export const ConnectFormBroadcast: React.FC = () => {
                                         <Typography>
                                             Please read the{' '}
                                             <a
-                                                href="https://github.com/mihai-dinculescu/msfs-2020-gps-link/blob/add-com-support/instructions/COM.md"
+                                                href="https://github.com/mihai-dinculescu/msfs-2020-gps-link/blob/main/instructions/COM.md"
                                                 target="_blank"
                                                 rel="noreferrer"
                                             >

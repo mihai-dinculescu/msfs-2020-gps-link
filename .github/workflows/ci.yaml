@@ -38,5 +38,7 @@ jobs:
         run: cargo make clippy
       - name: Run test
         run: cargo make test
+      - name: Run tauri info
+        run: cargo tauri info
       - name: Run tauri build
         run: cargo tauri build

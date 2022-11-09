@@ -17,7 +17,9 @@ Tested with [SkyDemon][sky_demon_url] and [Garmin Pilot][garmin_pilot_url].
 | Jeppesen FliteDeck Pro | PC       | -       | &check; |
 | SkyDemon               | Android  | &check; | -       |
 | SkyDemon               | PC       | &check; | &check; |
-| ForeFlight             | iOS      | ? \*    | -       |
+| ForeFlight Mobile      | iOS      | &check; | -       |
+| ? \*                   | ?        | ?       | ?       |
+
 
 \* Feedback from the ones with the ability to test will be greatly appreciated.
 

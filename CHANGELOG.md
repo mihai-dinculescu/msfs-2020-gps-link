@@ -6,6 +6,8 @@ file. This change log follows the conventions of
 
 ## [Unreleased]
 
+## [v0.3.1] - 2022-11-14
+
 ### Fixed
 
 - GPS Ground Speed is now correctly sent in knots instead of meters per second over COM.

@@ -49,7 +49,7 @@ Scroll to the bottom and you should see `SIMULATOR STATUS` showing an `amber`sta
 
 Contributions are welcome and encouraged! Please read [CONTRIBUTING.md][contributing_url].
 
-[latest_release]: https://github.com/mihai-dinculescu/msfs-2020-gps-link/releases/download/v0.3.0/msfs-2020-gps-link-v0.3.0.zip
+[latest_release]: https://github.com/mihai-dinculescu/msfs-2020-gps-link/releases/download/v0.3.1/msfs-2020-gps-link-v0.3.1.zip
 [latest_release_badge]: https://img.shields.io/github/release/mihai-dinculescu/msfs-2020-gps-link.svg
 [downloads_badge]: https://img.shields.io/github/downloads/mihai-dinculescu/msfs-2020-gps-link/total.svg
 [ci_badge]: https://github.com/mihai-dinculescu/msfs-2020-gps-link/workflows/CI/badge.svg?branch=main

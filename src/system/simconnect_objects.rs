@@ -11,7 +11,7 @@ pub struct GpsData {
     pub alt: f64,
     #[simconnect(name = "PRESSURE ALTITUDE", unit = "Meters")]
     pub pressure_altitude: f64,
-    #[simconnect(name = "GPS GROUND MAGNETIC TRACK", unit = "Degrees")]
+    #[simconnect(name = "GPS GROUND MAGNETIC TRACK", unit = "Radians")]
     pub gps_ground_magnetic_track: f64,
     #[simconnect(name = "MAGVAR", unit = "Degrees")]
     pub gps_magnetic_variation: f64,

@@ -45,7 +45,7 @@ impl Udp {
 impl BroadcasterExt for Udp {
     #[instrument(name = "Udp::send", skip(self, data))]
     fn send(&mut self, data: GpsData) -> Result<(), io::Error> {
-        let track = data.gps_ground_magnetic_track - data.gps_magnetic_variation;
+        let track = data.gps_ground_magnetic_track * .0174533; //convert radians to degrees.
 
         self.socket
             .send_to(

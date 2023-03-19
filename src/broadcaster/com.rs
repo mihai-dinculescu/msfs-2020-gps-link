@@ -148,13 +148,17 @@ impl Com {
 
 #[cfg(test)]
 mod tests {
-    use chrono::{TimeZone, Utc};
+    use chrono::{NaiveDate, Utc};
 
     use super::Com;
 
     #[test]
     fn test_convert_gps_data_to_nmea_mid_gga() {
-        let date = Utc.ymd(2022, 10, 30).and_hms_milli(21, 10, 30, 750);
+        let date = NaiveDate::from_ymd_opt(2022, 10, 30)
+            .and_then(|d| d.and_hms_milli_opt(21, 10, 30, 750))
+            .unwrap()
+            .and_local_timezone(Utc)
+            .unwrap();
 
         let data = crate::system::simconnect_objects::GpsData {
             lat: 51.509865,
@@ -176,7 +180,11 @@ mod tests {
 
     #[test]
     fn test_convert_gps_data_to_nmea_mid_gga_2() {
-        let date = Utc.ymd(2022, 1, 3).and_hms_milli(2, 1, 3, 75);
+        let date = NaiveDate::from_ymd_opt(2022, 1, 3)
+            .and_then(|d| d.and_hms_milli_opt(2, 1, 3, 75))
+            .unwrap()
+            .and_local_timezone(Utc)
+            .unwrap();
 
         let data = crate::system::simconnect_objects::GpsData {
             lat: 0.00040752447554520855,
@@ -198,7 +206,11 @@ mod tests {
 
     #[test]
     fn test_convert_gps_data_to_nmea_mid_rmc() {
-        let date = Utc.ymd(2022, 10, 30).and_hms_milli(21, 10, 30, 750);
+        let date = NaiveDate::from_ymd_opt(2022, 10, 30)
+            .and_then(|d| d.and_hms_milli_opt(21, 10, 30, 750))
+            .unwrap()
+            .and_local_timezone(Utc)
+            .unwrap();
 
         let data = crate::system::simconnect_objects::GpsData {
             lat: 51.509865,
@@ -220,7 +232,11 @@ mod tests {
 
     #[test]
     fn test_convert_gps_data_to_nmea_mid_rmc_2() {
-        let date = Utc.ymd(2022, 1, 3).and_hms_milli(2, 1, 3, 75);
+        let date = NaiveDate::from_ymd_opt(2022, 1, 3)
+            .and_then(|d| d.and_hms_milli_opt(2, 1, 3, 75))
+            .unwrap()
+            .and_local_timezone(Utc)
+            .unwrap();
 
         let data = crate::system::simconnect_objects::GpsData {
             lat: 0.00040752447554520855,

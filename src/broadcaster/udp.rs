@@ -45,15 +45,16 @@ impl Udp {
 impl BroadcasterExt for Udp {
     #[instrument(name = "Udp::send", skip(self, data))]
     fn send(&mut self, data: GpsData) -> Result<(), io::Error> {
-        let track = data.gps_ground_magnetic_track - data.gps_magnetic_variation;
+        let track = data.gps_ground_true_track;
+
+        let message = format!(
+            "XGPSMSFS,{:.5},{:.5},{:.1},{:.3},{:.1}",
+            data.lon, data.lat, data.alt, track, data.gps_ground_speed
+        );
 
         self.socket
             .send_to(
-                format!(
-                    "XGPSMSFS,{},{},{},{},{}",
-                    data.lon, data.lat, data.alt, track, data.gps_ground_speed
-                )
-                .as_bytes(),
+                message.as_bytes(),
                 format!("{}:{}", &self.netmask, self.port),
             )
             .map(|_| {

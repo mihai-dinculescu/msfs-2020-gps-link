@@ -11,6 +11,10 @@ file. This change log follows the conventions of
 - Updated to `simconnect-sdk` v0.2.2.
 - Updated to MSFS SDK v0.20.5.0.
 
+## Fixed
+
+- Fixed an issue that was causing the heading to be inaccurate with easterly magnetic variations.
+
 ## [v0.3.1] - 2022-11-14
 
 ### Fixed

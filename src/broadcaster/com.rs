@@ -134,7 +134,7 @@ impl Com {
             lon_min,
             lon_dir,
             data.gps_ground_speed_in_knots(),
-            data.gps_ground_magnetic_track,
+            data.gps_ground_true_track,
             date.format("%d%m%y"),
             magnetic_variation,
             magnetic_variation_dir,
@@ -165,7 +165,7 @@ mod tests {
             lon: -0.118092,
             alt: 0.0,
             pressure_altitude: 3.0,
-            gps_ground_magnetic_track: 310.55,
+            gps_ground_true_track: 310.55,
             gps_magnetic_variation: 5.0,
             gps_ground_speed: 100.50,
         };
@@ -191,7 +191,7 @@ mod tests {
             lon: 0.01397450300629543,
             alt: 0.0,
             pressure_altitude: 0.9642891859251844,
-            gps_ground_magnetic_track: 92.71680515837362,
+            gps_ground_true_track: 92.71680515837362,
             gps_magnetic_variation: -4.384223296150313,
             gps_ground_speed: 0.0,
         };
@@ -217,7 +217,7 @@ mod tests {
             lon: -0.118092,
             alt: 0.0,
             pressure_altitude: 3.0,
-            gps_ground_magnetic_track: 310.55,
+            gps_ground_true_track: 310.55,
             gps_magnetic_variation: 5.0,
             gps_ground_speed: 100.50,
         };
@@ -243,7 +243,7 @@ mod tests {
             lon: 0.01397450300629543,
             alt: 0.0,
             pressure_altitude: 0.9642891859251844,
-            gps_ground_magnetic_track: 92.71680515837362,
+            gps_ground_true_track: 92.71680515837362,
             gps_magnetic_variation: -4.384223296150313,
             gps_ground_speed: 0.0,
         };

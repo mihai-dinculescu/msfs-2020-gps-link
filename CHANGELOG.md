@@ -6,6 +6,8 @@ file. This change log follows the conventions of
 
 ## [Unreleased]
 
+## [v0.3.2] - 2023-03-22
+
 ## Changed
 
 - Updated to `simconnect-sdk` v0.2.2.
@@ -110,6 +112,8 @@ file. This change log follows the conventions of
 ### Initial Release of MSFS 2020 GPS Link
 
 [unreleased]: https://github.com/mihai-dinculescu/msfs-2020-gps-link
+[v0.3.2]: https://github.com/mihai-dinculescu/msfs-2020-gps-link/tree/v0.3.2
+[v0.3.1]: https://github.com/mihai-dinculescu/msfs-2020-gps-link/tree/v0.3.1
 [v0.3.0]: https://github.com/mihai-dinculescu/msfs-2020-gps-link/tree/v0.3.0
 [v0.3.0-alpha.2]: https://github.com/mihai-dinculescu/msfs-2020-gps-link/tree/v0.3.0-alpha.2
 [v0.3.0-alpha.1]: https://github.com/mihai-dinculescu/msfs-2020-gps-link/tree/v0.3.0-alpha.1

@@ -1,7 +1,7 @@
 [package]
 name = "MSFS-2020-GPS-Link"
 version = "0.3.2"
-authors = [ "Mihai Dinculescu <mihai.dinculescu@outlook.com>" ]
+authors = ["Mihai Dinculescu <mihai.dinculescu@outlook.com>"]
 edition = "2021"
 description = "MSFS 2020 GPS Link"
 license = "MIT"
@@ -16,20 +16,20 @@ actix = "0.13"
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
 opentelemetry_api = "0.18"
 opentelemetry-jaeger = { version = "0.17" }
-serde = { version = "1.0", features = [ "derive" ] }
+serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 serialport = "4.2"
-simconnect-sdk = { version = "0.2", features= ["derive"] }
-tauri = {version = "1.2", features = ["api-all"] }
-tokio = { version = "1.26", features = [ "sync", "time" ] }
+simconnect-sdk = { version = "0.2", features = ["derive"] }
+tauri = { version = "1.2", features = ["api-all"] }
+tokio = { version = "1.27", features = ["sync", "time"] }
 tracing = "0.1"
 tracing-log = "0.1"
 tracing-opentelemetry = "0.18"
-tracing-subscriber = { version = "0.3", features = [ "env-filter" ] }
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 [build-dependencies]
 tauri-build = { version = "1.2", features = [] }
 
 [features]
-custom-protocol = [ "tauri/custom-protocol" ]
-default = [ "custom-protocol" ]
+custom-protocol = ["tauri/custom-protocol"]
+default = ["custom-protocol"]

@@ -18,6 +18,7 @@ Tested with [SkyDemon][sky_demon_url] and [Garmin Pilot][garmin_pilot_url].
 | SkyDemon               | Android  | &check; | -       |
 | SkyDemon               | PC       | &check; | &check; |
 | ForeFlight Mobile      | iOS      | &check; | -       |
+| Avare                  | Android  | &check; | -       |
 | ? \*                   | ?        | ?       | ?       |
 
 
